@@ -272,9 +272,10 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
 	// Launch our payload.
-	if (!update)
+	if (!update){
+		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 		(*ext_payload_ptr)();
-	else
+	}else
 	{
 		// Set updated flag to skip check on launch.
 		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
@@ -762,6 +763,7 @@ static void _check_for_updated_bootloader()
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
 	else
 	{
+        /*
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
 			_launch_payload("bootloader/update.bin", true, false);
@@ -771,6 +773,7 @@ static void _check_for_updated_bootloader()
 			is_ipl_updated(buf, "bootloader/update.bin", true);
 			free(buf);
 		}
+        */
 	}
 }
 
@@ -1293,7 +1296,7 @@ static void _check_low_battery()
 			{
 				display_init();
 				u32 *fb = display_init_framebuffer_pitch();
-				gfx_init_ctxt(fb, 720, 1280, 720);
+				gfx_init_ctxt(fb, 1280, 720, 720);
 
 				gfx_set_rect_rgb(battery_icon,         BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_BATT_HEIGHT, 16, battery_icon_y_pos);
 				if (current_charge_status)
@@ -1479,6 +1482,7 @@ menu_t menu_top = { ment_top, "hekate v6.0.4", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
+#include "Land.h"
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -1532,7 +1536,7 @@ void ipl_main()
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
 	u32 *fb = display_init_framebuffer_pitch();
-	gfx_init_ctxt(fb, 720, 1280, 720);
+	gfx_init_ctxt(fb, 1280, 720, 720);
 	gfx_con_init();
 
 	display_backlight_pwm_init();
@@ -1540,17 +1544,45 @@ skip_lp0_minerva_config:
 
 	// Overclock BPMP.
 	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
+    /*
 
 	// Get R2P config from RTC.
 	if (h_cfg.t210b01)
 		_r2p_get_config_t210b01();
+    
+    
+    //test
+    gfx_con.mute = false;
+    display_backlight_brightness(h_cfg.backlight, 1000);
+	gfx_con_setpos(10, 5);
+    gfx_con.scale = 1;
+    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
+
+    gfx_con.scale = 2;
+    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
+
+
+    gfx_con.scale = 3;
+    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
+
+    gfx_con.scale = 4;
+    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
+    gfx_con.fntsz = 8;
+    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
+    msleep(1000); // Guard against injection VOL+.
+    btn_wait();
+    msleep(500);  // Guard against force menu VOL-.
+    power_set_state(POWER_OFF_RESET);
+    _launch_payload("/payload.bin", false, true);
+    */
+    anothermain();
 
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-		_auto_launch();
+//	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+//		_auto_launch();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();

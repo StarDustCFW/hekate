@@ -176,10 +176,14 @@ void gfx_con_getpos(u32 *x, u32 *y)
 	*y = gfx_con.y;
 }
 
+static int gfx_column = 0;
 void gfx_con_setpos(u32 x, u32 y)
 {
 	gfx_con.x = x;
 	gfx_con.y = y;
+
+	if (!x)
+		gfx_column = 0;
 }
 
 void gfx_putc(char c)
@@ -191,45 +195,58 @@ void gfx_putc(char c)
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
-			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
-
 			for (u32 i = 0; i < 16; i += 2)
 			{
 				u8 v = *cbuf;
 				for (u32 k = 0; k < 2; k++)
 				{
-					for (u32 j = 0; j < 8; j++)
+					u32 fb_off = gfx_con.y + i + k + (gfx_ctxt.width - gfx_con.x) * gfx_ctxt.stride;
+					for (u32 j = 0; j < 16; j += 2)
 					{
-						if (v & 1)
+						for (u32 l = 0; l < 2; l++)
 						{
-							*fb = gfx_con.fgcol;
-							fb++;
-							*fb = gfx_con.fgcol;
+							if (v & 1)
+								gfx_ctxt.fb[fb_off - (j + l) * gfx_ctxt.stride] = gfx_con.fgcol;
+							else if (gfx_con.fillbg)
+								gfx_ctxt.fb[fb_off - (j + l) * gfx_ctxt.stride] = gfx_con.bgcol;
 						}
-						else if (gfx_con.fillbg)
-						{
-							*fb = gfx_con.bgcol;
-							fb++;
-							*fb = gfx_con.bgcol;
-						}
-						else
-							fb++;
 						v >>= 1;
-						fb++;
 					}
-					fb += gfx_ctxt.stride - 16;
 					v = *cbuf;
 				}
 				cbuf++;
 			}
 			gfx_con.x += 16;
+			if (gfx_con.x > gfx_ctxt.width - 16)
+			{
+				gfx_con.x = gfx_column;
+				gfx_con.y += 16;
+				if (gfx_con.y > gfx_ctxt.height - 33)
+				{
+					gfx_con.y = 0;
+
+					if (!gfx_column)
+						gfx_column = 640;
+					else
+						gfx_column = 0;
+					gfx_con.x = gfx_column;
+				}
+			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = 0;
+			gfx_con.x = gfx_column;
 			gfx_con.y += 16;
-			if (gfx_con.y > gfx_ctxt.height - 16)
+			if (gfx_con.y > gfx_ctxt.height - 33)
+			{
 				gfx_con.y = 0;
+
+				if (!gfx_column)
+					gfx_column = 640;
+				else
+					gfx_column = 0;
+				gfx_con.x = gfx_column;
+			}
 		}
 		break;
 	case 8:
@@ -237,29 +254,50 @@ void gfx_putc(char c)
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
-			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
 			for (u32 i = 0; i < 8; i++)
 			{
 				u8 v = *cbuf++;
+				u32 fb_off = gfx_con.y + i + (gfx_ctxt.width - gfx_con.x) * gfx_ctxt.stride;
 				for (u32 j = 0; j < 8; j++)
 				{
 					if (v & 1)
-						*fb = gfx_con.fgcol;
+						gfx_ctxt.fb[fb_off - (j * gfx_ctxt.stride)] = gfx_con.fgcol;
 					else if (gfx_con.fillbg)
-						*fb = gfx_con.bgcol;
+						gfx_ctxt.fb[fb_off - (j * gfx_ctxt.stride)] = gfx_con.bgcol;
 					v >>= 1;
-					fb++;
 				}
-				fb += gfx_ctxt.stride - 8;
 			}
 			gfx_con.x += 8;
+			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_column - 8)
+			{
+				gfx_con.x = gfx_column;
+				gfx_con.y += 8;
+				if (gfx_con.y > gfx_ctxt.height - 33)
+				{
+					gfx_con.y = 0;
+
+					if (!gfx_column)
+						gfx_column = 640;
+					else
+						gfx_column = 0;
+					gfx_con.x = gfx_column;
+				}
+			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = 0;
+			gfx_con.x = gfx_column;
 			gfx_con.y += 8;
-			if (gfx_con.y > gfx_ctxt.height - 8)
+			if (gfx_con.y > gfx_ctxt.height - 33)
+			{
 				gfx_con.y = 0;
+
+				if (!gfx_column)
+					gfx_column = 640;
+				else
+					gfx_column = 0;
+				gfx_con.x = gfx_column;
+			}
 		}
 		break;
 	}
