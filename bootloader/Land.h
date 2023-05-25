@@ -2,7 +2,7 @@
     extra file
 
 */
-int REVI_VERSION = 3;
+int REVI_VERSION = 4;
 u32 fusesB()
 {
 	u32 burntFuses = bit_count(fuse_read_odm(7));
@@ -93,7 +93,7 @@ void BootStrapNX()
 		gfx_con_setcol(0xFFF9F9F9, 0, 0xFF191414);
 		gfx_con_setpos(1, 38);
 		gfx_printf("StarDustCFW\n");
-		gfx_con_setpos(1220, 1);
+		gfx_con_setpos(1120, 1);
 		gfx_printf("%d%%", battPercent);
 		
 		
@@ -952,6 +952,7 @@ void anothermain(){
     gfx_con.mute = false;
     display_backlight_brightness(h_cfg.backlight, 1000);
     sd_mount();
+    
     if (btn_read_vol() == (BTN_VOL_UP)){
         _launch_payload("/StarDust.bin", false, false);
         _launch_payload("/StarDust_update/StarDust.bin", false, false);
@@ -975,11 +976,21 @@ void anothermain(){
     //error handle
     gfx_con.fntsz = 16;
     gfx_printf("Something go Wrong\n\n");
-    msleep(1000); // Guard against injection VOL+.
+    msleep(5000); // Guard against injection VOL+.
     BootStrapNX();
     
     
-/**/
+
+/*    
+*/
+/*
+
+    u8 *custom_bg = (u8 *)sd_file_read2("/StarDust/skins/xbox/background.bmp");
+    gfx_render_splash(custom_bg);
+    
+    gfx_render_bmp_arg_file("/StarDust/skins/xbox/Icons/Atmosphere.bmp",100,100,300,300);
+
+*/
     /*
         btn_wait();
         msleep(500);  // Guard against force menu VOL-.

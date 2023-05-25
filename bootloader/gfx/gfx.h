@@ -63,6 +63,16 @@ typedef struct _gfx_con_t
 	bool mute;
 } gfx_con_t;
 
+typedef struct 
+{
+    u32 size;
+    u32 size_x;
+    u32 size_y;
+    u32 offset;
+    u32 pos_x;
+    u32 pos_y;
+} bmp_data_t;
+
 // Global gfx console and context.
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
@@ -90,5 +100,10 @@ void gfx_set_rect_grey(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos
 void gfx_set_rect_rgb(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
 void gfx_set_rect_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
 void gfx_render_bmp_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
-
+void gfx_render_bmp_argb_transparent(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y, u32 transparent_color);
+void gfx_render_bmp_arg_bitmap(u8* bitmap, u32 x, u32 y, u32 width, u32 height);
+void gfx_render_bmp_arg_bitmap_transparent(u8* bitmap, u32 x, u32 y, u32 width, u32 height, u32 transparent_color);
+void gfx_render_bmp_arg_file(char *path, u32 x, u32 y, u32 width, u32 height);
+void gfx_render_splash(u8 *bitmap);
+extern void *sd_file_read2(const char *path);
 #endif

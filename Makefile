@@ -12,7 +12,7 @@ include ./Versions.inc
 
 ################################################################################
 
-TARGET := hekate
+TARGET := payload
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
@@ -119,10 +119,10 @@ clean: $(TOOLS)
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(NYXDIR):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(LDRDIR): $(TARGET).bin
 	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin
