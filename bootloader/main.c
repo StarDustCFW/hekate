@@ -648,7 +648,7 @@ out:
 
 static void _nyx_load_run()
 {
-	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
+	u8 *nyx = sd_file_read("bootloader/ssys/nyx.bin", NULL);
 	if (!nyx)
 		return;
 
@@ -1482,7 +1482,7 @@ menu_t menu_top = { ment_top, "hekate v6.0.4", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
-#include "Land.h"
+#include "menu/Land.h"
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -1575,8 +1575,8 @@ skip_lp0_minerva_config:
     power_set_state(POWER_OFF_RESET);
     _launch_payload("/payload.bin", false, true);
     */
-    anothermain();
-
+    //anothermain();
+    takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	_show_errors();
 

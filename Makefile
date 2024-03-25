@@ -16,13 +16,20 @@ TARGET := payload
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
+SOURCES := bootloader/menu
 BDKDIR := bdk
 BDKINC := -I./$(BDKDIR)
-VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
+VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/))
 VPATH += $(dir $(wildcard ./$(BDKDIR)/)) $(dir $(wildcard ./$(BDKDIR)/*/)) $(dir $(wildcard ./$(BDKDIR)/*/*/))
 
+SOURCES	:=	$(foreach dir,$(SOURCES),$(shell find $(dir) -maxdepth 10 -type d))
+
+CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+
+OFILES_SRC		:= $(SFILES:.s=.o) $(CFILES:.c=.o)
+
 # Main and graphics.
-OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	start.o exception_handlers.o \
 	main.o heap.o \
 	gfx.o logos.o tui.o \
@@ -57,6 +64,9 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	diskio.o ff.o ffunicode.o ffsystem.o \
 	elfload.o elfreloc_arm.o \
 )
+
+OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
+$(info   $(OBJS))
 
 GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'
 FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'

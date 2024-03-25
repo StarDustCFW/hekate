@@ -953,6 +953,7 @@ void anothermain(){
     display_backlight_brightness(h_cfg.backlight, 1000);
     sd_mount();
     
+/*    
     if (btn_read_vol() == (BTN_VOL_UP)){
         _launch_payload("/StarDust.bin", false, false);
         _launch_payload("/StarDust_update/StarDust.bin", false, false);
@@ -965,10 +966,24 @@ void anothermain(){
         f_unlink("/atmosphere/contents/0100000000001013/exefs.nsp");
         //Start Updated Stardust Menu TODO
         _launch_payload("StarDust/payloads/hekate.bin", false, false);
-    } else {
+    }
+    
+    // Mariko Never reach this point
+    
+    //Ignore Menu, is my way
+	if (sd_file_exists("StarDust/flags/UNDERWARE.flag"))
+    {
+        run_payload("/StarDust/payloads/hekate.bin");
+    }
+    
+    //NOt ignore menu but, Always use this payload, will come handy
+    if (!sd_file_exists("StarDust/flags/UNDERTAKE.flag"))
+    {
         printerCU("/StarDust.bin --> /payload.bin", "Remove Mariko fix", 0);
         copyfile("/StarDust.bin", "/payload.bin");
-    }
+	}
+    
+    //Run menu has normal
     run_payload("/StarDust_update/StarDust.bin");
     run_payload("/StarDust.bin");
     run_payload("/StarDust/payloads/hekate.bin");
@@ -981,21 +996,19 @@ void anothermain(){
     
     
 
-/*    
 */
-/*
 
     u8 *custom_bg = (u8 *)sd_file_read2("/StarDust/skins/xbox/background.bmp");
     gfx_render_splash(custom_bg);
     
     gfx_render_bmp_arg_file("/StarDust/skins/xbox/Icons/Atmosphere.bmp",100,100,300,300);
+    gfx_render_bmp_arg_file("/StarDust/skins/xbox/Icons/Hekate.bmp",500,100,300,300);
 
-*/
-    /*
+
         btn_wait();
         msleep(500);  // Guard against force menu VOL-.
         power_set_state(POWER_OFF);
-    */
+
 }
 
 /*    
