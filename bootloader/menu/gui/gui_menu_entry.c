@@ -21,7 +21,7 @@
 
 #include "../../gfx/gfx.h"
 
-#include "../tools/touch.h"
+#include "../tools/touch2.h"
 #include "../tools/fs_utils.h"
 
 #include <string.h>
@@ -46,7 +46,7 @@ gui_menu_entry_t *gui_create_menu_entry(const char *text,
         strcpy(menu_entry->text, ""); // If not default icon, text is not needed on touch input
     }
     else
-        menu_entry->bitmap = sd_file_read2(DEFAULT_LOGO);
+        menu_entry->bitmap = sd_4_file_read2(DEFAULT_LOGO);
 
     menu_entry->x = x;
     menu_entry->y = y;
@@ -78,27 +78,27 @@ gui_menu_entry_t *gui_create_menu_entry_no_bitmap(const char *text,
 static u32 get_text_width(char *text)
 {
     u32 lenght = strlen(text);
-    return lenght * g_gfx_con.scale * (u32)CHAR_WIDTH;
+    return lenght * gfx_con.scale * (u32)CHAR_WIDTH;
 }
 
 static void render_text_centered(gui_menu_entry_t *entry, char *text)
 {
-    g_gfx_con.scale = 2;
+    gfx_con.scale = 2;
 
     /* Set text below the logo and centered */
     s32 x_offset = -(get_text_width(text) - entry->width) / 2;
     u32 y_offset = entry->bitmap != NULL ? entry->height + 20 : 0;
 
-    g_gfx_con.scale = 2;
-    gfx_con_setpos(&g_gfx_con, entry->x + x_offset, entry->y + y_offset);
+    gfx_con.scale = 2;
+    gfx_con_setpos( entry->x + x_offset, entry->y + y_offset);
 
-    gfx_printf(&g_gfx_con, "%s", entry->text);
+    gfx_printf( "%s", entry->text);
 }
 
 /* Renders a gfx menu entry */
 void gui_menu_render_entry(gui_menu_entry_t* entry)
 {
-    gfx_render_bmp_arg_bitmap(&g_gfx_ctxt, entry->bitmap,
+    gfx_render_bmp_arg_bitmap( entry->bitmap,
                                 entry->x, entry->y,
                                 entry->width, entry->height);
 

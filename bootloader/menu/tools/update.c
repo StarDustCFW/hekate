@@ -5,7 +5,7 @@
 #include "../../gfx/gfx.h"
 #include "../tools/update.h"
 #include "utils/btn.h"
-#include "core/launcher.h"
+#include "../core/launcher.h"
 #include "../tools/tools.h"
 
 #include "utils/util.h"
@@ -95,7 +95,7 @@ void lineHandler(char line[])
 			return;
 		}
 		printerCU(line,"",0);
-		sd_save_to_file(clip, strlen(clip), line);
+		sd_save_2_file(clip, strlen(clip), line);
 		return;
 	}
 	
@@ -209,7 +209,7 @@ void fix_emu()
 	f_puts("path=emuMMC/EF00\n", &fp);
 	f_puts("nintendo_path=emuMMC/EF00/Nintendo\n", &fp);
 	f_close(&fp);
-	sd_save_to_file("", 0, "emuMMC/EF00/file_based");
+	sd_save_2_file("", 0, "emuMMC/EF00/file_based");
 }
 
 /*

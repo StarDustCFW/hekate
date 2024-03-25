@@ -13,10 +13,10 @@
 #include "../../gfx/gfx.h"
 #include "mem/heap.h"
 #include <string.h>
-//#include "core/launcher.h"
+#include "../core/launcher.h"
 #include "../gui/custom-gui.h"
 #include "power/max17050.h"
-#include "tools.h"
+#include "../tools/tools.h"
 #define REVI_VERSION LOAD_BUILD_VER
 
 __attribute__((noreturn)) void wait_for_button_and_reboot(void) {
@@ -24,7 +24,7 @@ __attribute__((noreturn)) void wait_for_button_and_reboot(void) {
     while (true) {
         button = btn_read();
         if (button & BTN_POWER) {
-            reboot_rcm();
+            power_set_state(REBOOT_RCM);
         }
     }
 }
@@ -132,7 +132,8 @@ void SDStrap(){
 
 void BootStrapNX()
 {
-    gfx_clear_buffer(&g_gfx_ctxt);
+    minerva_change_freq(FREQ_204);
+    gfx_clear_grey(0x00);
     sd_unmount();
     u32 battPercent = 0;
     u32 letX = 20;
@@ -146,50 +147,53 @@ void BootStrapNX()
     u32 countfull = 7*5;
 
     u32 burntFuses = fusesB();
-    char* mindowngrade = fusesM();
-    g_gfx_con.mute = 0;
-    gfx_swap_buffer(&g_gfx_ctxt);
-    gfx_clear_buffer(&g_gfx_ctxt);
+    char* mindowngrade = "";//fusesM(); ToDo
+    gfx_clear_grey(0x00);
     while (btn_read() & BTN_POWER);
     display_backlight_brightness(a, 1000);
 	while (true)
 	{
         
-		max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
-		battPercent = (battPercent >> 8) & 0xFF;
 		u32 res = 0, btn = btn_read();
 		do
 		{
 			res = btn_read();
-			if (battPercent < 5){power_off();}
+            max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
+            battPercent = (battPercent >> 8) & 0xFF;
+			if (battPercent < 5){power_set_state(POWER_OFF);}
 			msleep(200);
 			if (count>0){
 				count--;
 				if (count==0){
                     display_backlight_brightness(a, 1000);
+                    gfx_clear_grey(0x00);
                 } else  if (count<=countfull/3){
                     display_backlight_brightness(c, 1000);
                 }
 			}
 		} while (btn == res);
+        gfx_clear_grey(0x00);
 		if (res & BTN_POWER) {
-			if (btn_read() & BTN_VOL_UP){reboot_rcm();}
+			if (btn_read() & BTN_VOL_UP){power_set_state(REBOOT_RCM);}
 			
 			//if hold power buton then power off
 			if (btn_read() & BTN_POWER) msleep(1000);
 			if (btn_read() & BTN_POWER) msleep(1000);
 			if (btn_read() & BTN_POWER){
                 display_backlight_brightness(b, 1000);
-				power_off();
+				power_set_state(POWER_OFF);
 			}
+            gfx_con_setpos(1,100);
 			if (sd_mount())
 			{
+                
 				launch_payload("payload.bin");
 				sd_unmount();
-				gfx_printf(&g_gfx_con, "%kpayload.bin%k missing%k\n",0xFF008F39,0xFFea2f1e,0xFFF9F9F9);
+				gfx_printf("%kpayload.bin%k missing%k\n",0xFF008F39,0xFFea2f1e,0xFFF9F9F9);
                 display_backlight_brightness(b, 1000);
 			}else{
-				gfx_printf(&g_gfx_con, "%kSD card Mount failed...%k\n",0xFFea2f1e,0xFFF9F9F9);
+				
+                gfx_printf("%kSD card Mount failed...%k\n",0xFFea2f1e,0xFFF9F9F9);
 			}
 			//if hold power buton then power off
 			if (btn_read() & BTN_POWER)
@@ -197,33 +201,35 @@ void BootStrapNX()
 			if (btn_read() & BTN_POWER)
 			msleep(1000);
 			if (btn_read() & BTN_POWER)
-			power_off();
+			power_set_state(POWER_OFF);
 		}
 
-		g_gfx_con.scale = 2;
-		gfx_con_setpos(&g_gfx_con, 1,1);
-		gfx_printf(&g_gfx_con,"%k%d%k%k%d%k%k%s%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0XFFEA2F1E, burntFuses ,0xFFCCCCCC ,0XFF331AD8 ,mindowngrade ,0xFFCCCCCC);
-		g_gfx_con.scale = 3;
-		gfx_con_setpos(&g_gfx_con, 1, 20);
-		gfx_con_setcol(&g_gfx_con, 0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf(&g_gfx_con, "BootStrapNX\n");
-		gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
-		gfx_printf(&g_gfx_con, "StarDustCFW\n");
-		gfx_con_setpos(&g_gfx_con, 1200, 10);
-		gfx_printf(&g_gfx_con, "%d%%", battPercent);
+		gfx_con.fntsz = 16;
+		gfx_con_setpos(1,1);
+		gfx_printf("%k%d%k%k%d%k%k%s%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0XFFEA2F1E, burntFuses ,0xFFCCCCCC ,0XFF331AD8 ,mindowngrade ,0xFFCCCCCC);
+//		gfx_con.fntsz = 16;
+		gfx_con_setpos(1, 20);
+		gfx_con_setcol(0xFF008F39, 0xFF726F68, 0xFF191414);
+		gfx_printf("BootStrapNX\n");
+		gfx_con_setcol(0xFFF9F9F9, 0, 0xFF191414);
+		gfx_con_setpos(1, 38);
+		gfx_printf("StarDustCFW\n");
+		gfx_con_setpos(1120, 1);
+		gfx_printf("%d%%", battPercent);
 		
 		
 		//Draw Footer
-		g_gfx_con.scale = 3;
-		gfx_con_setpos(&g_gfx_con, letX, letY+250);
-		gfx_printf(&g_gfx_con, "Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
-		gfx_con_setpos(&g_gfx_con, letX, letY+280);
-		gfx_printf(&g_gfx_con, "Hold %kVol+ POWER%k To Reboot RCM\n",0xFF331ad8,0xFFF9F9F9);
-		gfx_con_setpos(&g_gfx_con, letX, letY+310);
-		gfx_printf(&g_gfx_con, "Hold %kPOWER%k To Full Power Off\n",0xFF331ad8,0xFFF9F9F9);
+		gfx_con.fntsz = 16;
+		gfx_con_setpos(letX, letY+250);
+		gfx_printf("Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
+		gfx_con_setpos(letX, letY+280);
+		gfx_printf("Hold %kVol+ POWER%k To Reboot RCM\n",0xFF331ad8,0xFFF9F9F9);
+		gfx_con_setpos(letX, letY+310);
+		gfx_printf("Hold %kPOWER%k To Full Power Off\n",0xFF331ad8,0xFFF9F9F9);
 		
 		display_backlight_brightness(b, 1000);
-		gfx_swap_buffer(&g_gfx_ctxt);
+		//gfx_clear_grey(0x00);
+        //msleep(1000);
 		count=countfull;
 	}
 }
@@ -244,17 +250,17 @@ void printerCU(char *text,const char *title,int clean)
 			strcpy(titw, "\0");
 			return;
 		}
-		//if (clean != 2) gfx_swap_buffer(&g_gfx_ctxt);
+		//if (clean != 2) gfx_swap_buffer(&gfx_ctxt);
 		
-		g_gfx_con.scale = 3;
-		gfx_con_setpos(&g_gfx_con, 10, 5);
-		gfx_con_setcol(&g_gfx_con, 0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf(&g_gfx_con, "%s\n",title);
-		gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
-		g_gfx_con.scale = 2;
-		gfx_printf(&g_gfx_con, "%s\n",buff);
-		gfx_printf(&g_gfx_con, "\n->%s<-\n",text);
-		gfx_swap_buffer(&g_gfx_ctxt);
+		gfx_con.scale = 3;
+		gfx_con_setpos( 10, 5);
+		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
+		gfx_printf( "%s\n",title);
+		gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
+		gfx_con.scale = 2;
+		gfx_printf( "%s\n",buff);
+		gfx_printf( "\n->%s<-\n",text);
+		//gfx_swap_buffer(&gfx_ctxt);
 		if (clean > 100){msleep(clean);clean=2;}
 		if (clean == 0)
 		{
@@ -289,3 +295,34 @@ void keys(){
 	}
 }
 */
+
+void *m_realloc(void* ptr, u32 current_size, u32 new_size)
+{
+    if (new_size == 0)
+    {
+      free(ptr);
+      return NULL;
+    }
+    else if (!ptr)
+    {
+        return malloc(new_size);
+    }
+    else if (new_size <= current_size)
+    {
+        return ptr;
+    }
+    else
+    {
+        if ((ptr) && (new_size > current_size))
+        {
+            void *ptrNew = malloc(new_size);
+            if (ptrNew)
+            {
+                memcpy(ptrNew, ptr, current_size);
+                free(ptr);
+            }
+            return ptrNew;
+        }
+        return NULL;
+    }
+}

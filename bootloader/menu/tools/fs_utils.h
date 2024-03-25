@@ -9,13 +9,13 @@
 extern sdmmc_t g_sd_sdmmc;
 extern sdmmc_storage_t g_sd_storage;
 extern FATFS g_sd_fs;
-extern bool g_sd_mounted;
+extern bool sd_mounted;
 
 bool sd_mount();
 void sd_unmount();
-void *sd_file_read2(const char *path);
+void *sd_4_file_read2(const char *path);
 char *read_file_string(char *path);
-int sd_save_to_file(void *buf, u32 size,const  char *filename);
+int sd_save_2_file(void *buf, u32 size,const  char *filename);
 bool sd_file_exists(const char* filename);
 void copyfile(const char* source, const char* target);
 void copyfileparam(char* param, char* source, char* target);
@@ -28,4 +28,8 @@ void copyarall(char* directory, char* destdir, char* filet, char* coment);
 void deleteall(char* directory, char* filet, char* coment);
 bool HasArchBit(const char *directory);
 void Killflags(char *directory);
+
+char *listfil(const char *directory, const char *pattern, bool includeHiddenFiles);
+char *listfol(const char *directory, const char *pattern, bool includeHiddenFiles);
+
 #endif

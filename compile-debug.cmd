@@ -4,6 +4,6 @@ rem set PATH=c:\devkitPro\msys2\usr\bin;%PATH%
 cls
 echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	make -j20
-%systemroot%\system32\timeout.exe 13 >nul
+%systemroot%\system32\timeout.exe 113 >nul
 goto:1
 exit

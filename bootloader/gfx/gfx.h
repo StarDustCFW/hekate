@@ -18,6 +18,8 @@
 
 #ifndef _GFX_H_
 #define _GFX_H_
+#define CHAR_WIDTH 8
+#define CHAR_HEIGHT 8
 
 #include <bdk.h>
 
@@ -55,6 +57,7 @@ typedef struct _gfx_con_t
 	u32 fntsz;
 	u32 x;
 	u32 y;
+	u32 scale;
 	u32 savedx;
 	u32 savedy;
 	u32 fgcol;

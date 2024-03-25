@@ -17,15 +17,15 @@
 #include "utils/util.h"
 #include "fs_utils.h"
 #include "utils/btn.h"
-#include "menu/gui/custom-gui.h"
-#include "../tools/touch.h"
+#include "../gui/custom-gui.h"
+#include "../tools/touch2.h"
 #include "../../gfx/gfx.h"
 #include "tools.h"
 
-extern gfx_ctxt_t g_gfx_ctxt;
+extern gfx_ctxt_t gfx_ctxt;
 
-touch_event_t last_event;
-
+touch_event last_event;
+/*
 static int touch_command(u8 cmd)
 {
 	int err = i2c_send_byte(I2C_3, 0x49, cmd, 0);
@@ -37,13 +37,13 @@ static int touch_command(u8 cmd)
 	return 0;
 }
 
-static void touch_process_contact_event(touch_event_t *event)
+static void touch_process_contact_event(touch_event *event)
 {
 	event->x = (event->raw[3] << 4) | ((event->raw[3] & 0xf0) >> 1);
 	event->y = (event->raw[2] << 4) | ((event->raw[3] & 0x0f));
 }
 
-static void touch_parse_event(touch_event_t *event) 
+static void touch_parse_event(touch_event *event) 
 {
 	event->type = event->raw[0];
 
@@ -63,15 +63,15 @@ static void touch_parse_event(touch_event_t *event)
 	}
 }
 
-static void touch_poll(touch_event_t *event)
+static void touch_poll(touch_event *event)
 {
     i2c_recv_buf_small(event->raw, 4, I2C_3, 0x49, STMFTS_LATEST_EVENT);
     touch_parse_event(event);
 }
-
-touch_event_t touch_wait()
+*/
+touch_event touch_wait()
 {
-	touch_event_t event;
+	touch_event event;
     static u32 maar =0;
 	do 
 	{
@@ -86,9 +86,9 @@ touch_event_t touch_wait()
 			if ((event.y + event.x) > 100)
 			{
 				//draw pointier o enter
-				g_gfx_con.scale = 5;
-				gfx_con_setpos(&g_gfx_con, event.y-25, event.x-25);
-				gfx_printf(&g_gfx_con, "X");
+				gfx_con.scale = 5;
+				gfx_con_setpos( event.y-25, event.x-25);
+				gfx_printf( "X");
 			}
 			
 		} else if(maar==1) {
@@ -106,15 +106,14 @@ touch_event_t touch_wait()
     
 	return event;
 }
-
+/*
 int touch_power_on() 
 {
 	int err;
 
-	/*
-	 * The datasheet does not specify the power on time, but considering
-	 * that the reset time is < 10ms, I sleep 20ms to be sure
-	 */
+	 // The datasheet does not specify the power on time, but considering
+	//  that the reset time is < 10ms, I sleep 20ms to be sure
+
 	msleep(20);
 	
 	err = touch_command(STMFTS_SYSTEM_RESET);
@@ -143,8 +142,8 @@ int touch_power_on()
 
 	return 1;
 }
-
-bool is_rect_touched(touch_event_t* event, u32 x, u32 y, u32 width, u32 height)
+*/
+bool is_rect_touched(touch_event* event, u32 x, u32 y, u32 width, u32 height)
 {
     if (event == NULL)
         return false;

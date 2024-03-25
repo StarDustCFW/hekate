@@ -1,7 +1,7 @@
 
 #include "gui_menu.h"
 #include "gui_menu_pool.h"
-#include "../tools/touch.h"
+#include "../tools/touch2.h"
 #include "utils/btn.h"
 #include "../tools/fs_utils.h"
 #include "utils/util.h"
@@ -15,6 +15,8 @@
 #include "soc/fuse.h"
 #include "../tools/tools.h"
 #include <stdio.h>
+#include "input/touch.h"
+
 
 #define MINOR_VERSION 3
 #define MAJOR_VERSION 0
@@ -57,20 +59,20 @@ void gui_menu_append_entry(gui_menu_t *menu, gui_menu_entry_t *menu_entry)
 static void gui_menu_draw_background(gui_menu_t* menu)
 {
     if(!render_custom_background(menu->custom_gui))
-        gfx_clear_color(&g_gfx_ctxt, 0xFF191414);
+        gfx_clear_color( 0xFF191414);
     
     /* Render title */
 //    if (!render_custom_title(menu->custom_gui)) 
 //   {
-//        g_gfx_con.scale = 2;
-//        gfx_con_setpos(&g_gfx_con, 15, 10);
-//        gfx_printf(&g_gfx_con, "ArgonNX v%d.%d %k%d%k", MAJOR_VERSION, MINOR_VERSION,0xFF00FF22, REVI_VERSION ,0xFFCCCCCC);
+//        gfx_con.scale = 2;
+//        gfx_con_setpos( 15, 10);
+//        gfx_printf( "ArgonNX v%d.%d %k%d%k", MAJOR_VERSION, MINOR_VERSION,0xFF00FF22, REVI_VERSION ,0xFFCCCCCC);
  //   }
        //StarDust version
 		char *str;
-		if (g_sd_mounted){
+		if (sd_mount()){
 			void *buf;
-			buf = sd_file_read2("StarDust/StarDustV.txt");
+			buf = sd_4_file_read2("StarDust/StarDustV.txt");
 			str = buf;
 			if (strlen(str)!=0)
 			{
@@ -84,19 +86,19 @@ static void gui_menu_draw_background(gui_menu_t* menu)
 		}
 		
 		
-		gfx_con_setcol(&g_gfx_con, 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
-		g_gfx_con.scale = 2;
-		gfx_con_setpos(&g_gfx_con, 1200, 50);
-		gfx_printf(&g_gfx_con, "v%s", Sversion);
+		gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
+		gfx_con.scale = 2;
+		gfx_con_setpos( 1200, 50);
+		gfx_printf( "v%s", Sversion);
 
 		
 	u32 burntFuses = fusesB();
 	//char* mindowngrade = fusesM();
 
-		gfx_con_setpos(&g_gfx_con, 1, 1);
-//		gfx_con_setpos(&g_gfx_con, 1145+jump, 60);
-		gfx_printf(&g_gfx_con,"%k%d%k%k%d%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0xFFea2f1e, burntFuses ,0xFFCCCCCC);
-		gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
+		gfx_con_setpos( 1, 1);
+//		gfx_con_setpos( 1145+jump, 60);
+		gfx_printf("%k%d%k%k%d%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0xFFea2f1e, burntFuses ,0xFFCCCCCC);
+		gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
 /* 
 Rojo  0xFFea2f1e
 azul  0xFF331ad8
@@ -110,7 +112,7 @@ static void gui_menu_render_menu(gui_menu_t* menu)
 {
     gui_menu_draw_background(menu);
     gui_menu_draw_entries(menu);
-    gfx_swap_buffer(&g_gfx_ctxt);
+    //gfx_swap_buffer(&g_gfx_ctxt);
 }
 
 static void gui_menu_draw_entries(gui_menu_t *menu)
@@ -129,7 +131,7 @@ static int gui_menu_update(gui_menu_t *menu)
 
     res = handle_touch_input(menu);
 
-    gfx_swap_buffer(&g_gfx_ctxt);
+    //gfx_swap_buffer(&g_gfx_ctxt);
 
     return res;
 }
@@ -137,7 +139,7 @@ static int gui_menu_update(gui_menu_t *menu)
 int gui_menu_open(gui_menu_t *menu)
 {
 
-    gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
+    gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
     /* 
      * Render and flush at first render because blocking input won't allow us 
      * flush buffers
@@ -155,7 +157,7 @@ int gui_menu_open(gui_menu_t *menu)
 int gui_menu_open3(gui_menu_t *menu)
 {
 
-    gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
+    gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
     /* 
      * Render and flush at first render because blocking input won't allow us 
      * flush buffers
@@ -176,21 +178,21 @@ int gui_menu_boot(gui_menu_t *menu)
      */
 		if (sd_file_exists("StarDust/autobootecho.txt")&& !sd_file_exists("StarDust/autoboot.inc"))
 		{
-		gfx_con_setcol(&g_gfx_con, 0xFF008F39, 0xFF726F68, 0xFF191414);
+		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
 			if(!render_custom_background(menu->custom_gui))
-				gfx_clear_color(&g_gfx_ctxt, 0xFF191414);
-			g_gfx_con.scale = 3;
-			gfx_con_setpos(&g_gfx_con, 1070, 0);
-			gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0xFFFFFFFF, 0xFF191414);
-			gfx_printf(&g_gfx_con, "AutoBoot\n");
-			gfx_con_setpos(&g_gfx_con, 500, 0);
-			gfx_printf(&g_gfx_con, "Vol +: StarDustMenu\n");
+				gfx_clear_color( 0xFF191414);
+			gfx_con.scale = 3;
+			gfx_con_setpos( 1070, 0);
+			gfx_con_setcol( 0xFFF9F9F9, 0xFFFFFFFF, 0xFF191414);
+			gfx_printf( "AutoBoot\n");
+			gfx_con_setpos( 500, 0);
+			gfx_printf( "Vol +: StarDustMenu\n");
 			
-			gfx_con_setpos(&g_gfx_con, 50, 0);
+			gfx_con_setpos( 50, 0);
 			char *str;
-			if (g_sd_mounted){
+			if (sd_mount()){
 				void *buf;
-				buf = sd_file_read2("StarDust/autobootecho.txt");
+				buf = sd_4_file_read2("StarDust/autobootecho.txt");
 				str = buf;
 				Sversion[0] = str[0];
 				Sversion[1] = str[1];
@@ -198,18 +200,18 @@ int gui_menu_boot(gui_menu_t *menu)
 				Sversion[3] =  0;
 			}
 			if(strstr(Sversion,"A") != NULL)
-			gfx_printf(&g_gfx_con, "-> Atmosphere\n");
+			gfx_printf( "-> Atmosphere\n");
 
 			if(strstr(Sversion,"T") != NULL)
-			gfx_printf(&g_gfx_con, "-> Android\n");
+			gfx_printf( "-> Android\n");
 
 			if(strstr(Sversion,"U") != NULL)
-			gfx_printf(&g_gfx_con, "-> Ubuntu\n");
+			gfx_printf( "-> Ubuntu\n");
 
 			if(strstr(Sversion,"S") != NULL)
-			{gfx_printf(&g_gfx_con, "-> SXOS\n"); }//isAMS = 0;
+			{gfx_printf( "-> SXOS\n"); }//isAMS = 0;
 
-			gfx_con_setcol(&g_gfx_con, 0xFFF9F9F9, 0, 0xFF191414);
+			gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
 			return 1;
 		}
 	return 0;
@@ -228,7 +230,7 @@ void gui_menu_destroy(gui_menu_t *menu)
 static int handle_touch_input(gui_menu_t *menu)
 {
     gui_menu_entry_t *entry = NULL;
-    touch_event_t event = touch_wait();
+    touch_event event = touch_wait();
 
 		if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE){
 			/* After touch input check if any entry has ben tapped */
@@ -289,7 +291,7 @@ void loadTheme()
 void saveTheme(char *param)
 {
 	them = param;
-	sd_save_to_file(param, strlen(param), "/StarDust/theme");
+	sd_save_2_file(param, strlen(param), "/StarDust/theme");
 }
 
 void *theme(char *path)

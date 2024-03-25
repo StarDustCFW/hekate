@@ -12,3 +12,4 @@ void BootStrapNX();
 void printerCU(char *text,const char *title,int clean);
 u32 fusesB();
 char *fusesM();
+void *m_realloc(void* ptr, u32 current_size, u32 new_size);

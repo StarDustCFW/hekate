@@ -21,8 +21,10 @@
 #include "soc/i2c.h"
 #include "utils/util.h"
 #include "utils/types.h"
+#include "input/touch.h"
 
-/* I2C commands */
+/*
+// I2C commands
 #define STMFTS_READ_INFO			    0x80
 #define STMFTS_READ_STATUS			    0x84
 #define STMFTS_READ_ONE_EVENT			0x85
@@ -43,7 +45,7 @@
 #define STMFTS_SS_CX_TUNING			    0xa4
 #define STMFTS_WRITE_REGISTER			0xb6
 
-/* events */
+// events
 #define STMFTS_EV_NO_EVENT			    0x00
 #define STMFTS_EV_MULTI_TOUCH_DETECTED	0x02
 #define STMFTS_EV_MULTI_TOUCH_ENTER		0x03
@@ -59,14 +61,14 @@
 #define STMFTS_EV_STATUS			    0x16
 #define STMFTS_EV_DEBUG				    0xdb
 
-/* multi touch related event masks */
+// multi touch related event masks
 #define STMFTS_MASK_EVENT_ID			0x0f
 #define STMFTS_MASK_TOUCH_ID			0xf0
 #define STMFTS_MASK_LEFT_EVENT			0x0f
 #define STMFTS_MASK_X_MSB			    0x0f
 #define STMFTS_MASK_Y_LSB			    0xf0
-
-/* key related event masks */
+ */
+// key related event masks
 #define STMFTS_MASK_KEY_NO_TOUCH		0x00
 #define STMFTS_MASK_KEY_MENU			0x01
 #define STMFTS_MASK_KEY_BACK			0x02
@@ -79,6 +81,7 @@
 
 /* TOUCH SUPPORT ONLY WORKS WHEN A GC IS INSIDE NINTENDO SWITCH */
 
+#define STMFTS_EV_SLEEP_OUT_CONTROLLER_READY    0x11
 
 typedef struct {
     u8 raw[4];
@@ -92,12 +95,12 @@ typedef struct {
 int touch_power_on();
 
 /* Wait for touch input */
-touch_event_t touch_wait();
+touch_event touch_wait();
 
 /**
  * Checks if touch event is produced inside a rectangle
  * x, y are the top left coordinates of the rect
  */
-bool is_rect_touched(touch_event_t* event, u32 x, u32 y, u32 width, u32 height);
+bool is_rect_touched(touch_event* event, u32 x, u32 y, u32 width, u32 height);
 
 #endif /* _TOUCH_H_ */ 

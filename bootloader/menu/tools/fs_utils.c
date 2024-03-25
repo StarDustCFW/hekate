@@ -25,55 +25,8 @@
 #include <stdlib.h>
 #include "../tools/tools.h"
 
-sdmmc_t g_sd_sdmmc;
-sdmmc_storage_t g_sd_storage;
-FATFS g_sd_fs;
-bool g_sd_mounted;
-bool sd_mount()
-{
-	if (g_sd_mounted)
-		return true;
-    u8 save = g_gfx_con.scale;
-    g_gfx_con.scale = 2;
-	gfx_con_setpos(&g_gfx_con, 1, 100);
-	if (!sdmmc_storage_init_sd(&g_sd_storage, &g_sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
-	{
-		display_backlight_brightness(100, 1000);
-        //gfx_printf(&g_gfx_con, "-\n", 0xFFFFDD00, 0xFFCCCCCC);
-        gfx_printf(&g_gfx_con, "%kFallo al montar la SD.\nNo se detectar la SD .\nAsegurese este haciendo buen contacto y este puesta !%k\n", 0xFFFFDD00, 0xFFCCCCCC);
-//		msleep(3000);
-	}
-	else
-	{
-		int res = 0;
-		res = f_mount(&g_sd_fs, "", 1);
-		if (res == FR_OK)
-		{
-			g_sd_mounted = 1;
-			return true;
-		}
-		else
-		{
-        gfx_printf(&g_gfx_con, "-\n", 0xFFFFDD00, 0xFFCCCCCC);
-        gfx_printf(&g_gfx_con, "%kFallo al montar la SD (FatFS Error %d).\nNo se encuentra una partición valida saca la sd\nAsegúrese que este en fat32 y haga buen contacto la sd en el slot %k\n", 0xFFFFDD00, res, 0xFFCCCCCC);
-		}
-	}
-    g_gfx_con.scale = save;
 
-	return false;
-}
-
-void sd_unmount()
-{
-	if (g_sd_mounted)
-	{
-		f_mount(NULL, "", 1);
-		sdmmc_storage_end(&g_sd_storage);
-		g_sd_mounted = false;
-	}
-}
-
-void *sd_file_read2(const char *path)
+void *sd_4_file_read2(const char *path)
 {
 	FIL fp;
 	if (f_open(&fp, path, FA_READ) != FR_OK)
@@ -118,14 +71,14 @@ char *read_file_string(char *path)
 	return buff;
 }
 
-int sd_save_to_file(void *buf, u32 size, const char *filename)
+int sd_save_2_file(void *buf, u32 size, const char *filename)
 {
 	FIL fp;
 	u32 res = 0;
 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
 	{
-        gfx_printf(&g_gfx_con, "%kError (%d) creating file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
+        gfx_printf( "%kError (%d) creating file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
 		return 1;
 	}
 
@@ -171,13 +124,13 @@ void copyfile(const char* source, const char* target)
     FIL fp;
     if (f_open(&fp, source, FA_READ) != FR_OK)
     {
-        gfx_printf(&g_gfx_con, "file %s mising\n",source);
-        //gfx_swap_buffer(&g_gfx_ctxt);
+        gfx_printf( "file %s mising\n",source);
+        //gfx_swap_buffer(&gfx_ctxt);
         //msleep(3000);
 	}else{
         u32 size = f_size(&fp);
         f_close(&fp);
-        sd_save_to_file(sd_file_read2(source),size,target);
+        sd_save_2_file(sd_4_file_read2(source),size,target);
 	}
 }
 
@@ -188,22 +141,22 @@ void copyfileparam(char* param, char* source, char* target)
     strcat(path, "/");
     strcat(path, source);
 /*		
-		g_gfx_con.scale = 2;
-        gfx_con_setpos(&g_gfx_con, 15, 50);
-		gfx_printf(&g_gfx_con, "--------------\n",path);
-		gfx_printf(&g_gfx_con, "copy %s %s\n",path ,target);
-	    gfx_swap_buffer(&g_gfx_ctxt);
+		gfx_con.scale = 2;
+        gfx_con_setpos( 15, 50);
+		gfx_printf( "--------------\n",path);
+		gfx_printf( "copy %s %s\n",path ,target);
+	    gfx_swap_buffer(&gfx_ctxt);
 */		
     FIL fp;
     if (f_open(&fp, path, FA_READ) != FR_OK)
     {
-		gfx_printf(&g_gfx_con, "file %s mising\n",path);
-	    gfx_swap_buffer(&g_gfx_ctxt);
+		gfx_printf( "file %s mising\n",path);
+	    //gfx_swap_buffer(&gfx_ctxt);
 		msleep(3000);
     }else{
         u32 size = f_size(&fp);
         f_close(&fp);
-        sd_save_to_file(sd_file_read2(path),size,target);
+        sd_save_2_file(sd_4_file_read2(path),size,target);
 	}
 }
 
@@ -225,9 +178,9 @@ void copy_folder(char* sourse_folder, char* dest_folder)
             strcpy(dest_file, dest_folder);
             strcat(dest_file, "/");
             strcat(dest_file, &Files[i * 256]);
-            gfx_con_setpos(&g_gfx_con, 10, 90);
-            gfx_printf(&g_gfx_con, "\ncopy %s to %s\n",source_file,dest_file);
-            gfx_swap_buffer(&g_gfx_ctxt);
+            gfx_con_setpos( 10, 90);
+            gfx_printf( "\ncopy %s to %s\n",source_file,dest_file);
+            //gfx_swap_buffer(&gfx_ctxt);
             copyfile(source_file,dest_file);//action
         }
         i++;
@@ -412,7 +365,7 @@ bool HasArchBit(const char *directory)
 
 void Killflags(char *directory)
 {
-	gfx_con_setpos(&g_gfx_con, 1, 10);
+	gfx_con_setpos( 1, 10);
 	printerCU(directory,"",2);
 	f_chmod(directory, 0, AM_RDO | AM_ARC);
     if (strstr(directory, "//") != NULL){
@@ -434,4 +387,188 @@ void Killflags(char *directory)
 			}
 	r++;
     }
+}
+
+char *listfol(const char *directory, const char *pattern, bool includeHiddenFiles)
+{
+	u8 max_entries = 61;
+
+	int res = 0;
+	u32 i = 0, j = 0, k = 0;
+	DIR dir;
+	static FILINFO fno;
+	
+	char *dir_entries = (char *)calloc(max_entries, 256);
+	char *copy_entries = (char *)calloc(max_entries, 256);
+	char *temp = (char *)calloc(1, 256);
+
+	if (!pattern && !f_opendir(&dir, directory))
+	{
+		for (;;)
+		{
+			res = f_readdir(&dir, &fno);
+			if (res || !fno.fname[0])
+				break;
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			{
+				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
+				k++;
+				if (k > (max_entries - 1))
+					break;
+			}
+		}
+		f_closedir(&dir);
+	}
+	else if (pattern && !f_findfirst(&dir, &fno, directory, pattern) && fno.fname[0])
+	{
+		do
+		{
+			if ((fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			{
+				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
+				k++;
+				if (k > (max_entries - 1))
+					break;
+			}
+			res = f_findnext(&dir, &fno);
+		} while (fno.fname[0] && !res);
+		f_closedir(&dir);
+	}
+
+	if (!k)
+	{
+		free(temp);
+		free(dir_entries);
+		free(copy_entries);
+
+		return NULL;
+	}
+
+	// make copy_entries lowercase version of dir_entries
+	for(i = 0; i < k; i++) 
+	{
+		j = i * 256;
+		while(dir_entries[j]) 
+		{
+			copy_entries[j] = dir_entries[j];
+
+			if(dir_entries[j] >= 'A' && dir_entries[j] <= 'Z')
+				copy_entries[j] += 32;
+			
+			j++;
+		}
+		
+		copy_entries[j] = '\0';
+	}
+
+	// compare copy_entries but sort dir_entries
+	for (i = 0; i < k - 1 ; i++)
+	{
+		for (j = i + 1; j < k; j++)
+		{
+			if (strcmp(&copy_entries[i * 256], &copy_entries[j * 256]) > 0) 
+			{
+				memcpy(temp, &dir_entries[i * 256], strlen(&dir_entries[i * 256]) + 1);
+				memcpy(&dir_entries[i * 256], &dir_entries[j * 256], strlen(&dir_entries[j * 256]) + 1);
+				memcpy(&dir_entries[j * 256], temp, strlen(temp) + 1);
+			}
+		}
+	}
+
+	free(temp);
+	free(copy_entries);
+
+	return dir_entries;
+	}
+
+char *listfil(const char *directory, const char *pattern, bool includeHiddenFiles)
+{
+	u8 max_entries = 61;
+
+	int res = 0;
+	u32 i = 0, j = 0, k = 0;
+	DIR dir;
+	static FILINFO fno;
+	
+	char *dir_entries = (char *)calloc(max_entries, 256);
+	char *copy_entries = (char *)calloc(max_entries, 256);
+	char *temp = (char *)calloc(1, 256);
+
+	if (!pattern && !f_opendir(&dir, directory))
+	{
+		for (;;)
+		{
+			res = f_readdir(&dir, &fno);
+			if (res || !fno.fname[0])
+				break;
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			{
+				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
+				k++;
+				if (k > (max_entries - 1))
+					break;
+			}
+		}
+		f_closedir(&dir);
+	}
+	else if (pattern && !f_findfirst(&dir, &fno, directory, pattern) && fno.fname[0])
+	{
+		do
+		{
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			{
+				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
+				k++;
+				if (k > (max_entries - 1))
+					break;
+			}
+			res = f_findnext(&dir, &fno);
+		} while (fno.fname[0] && !res);
+		f_closedir(&dir);
+	}
+
+	if (!k)
+	{
+		free(temp);
+		free(dir_entries);
+		free(copy_entries);
+
+		return NULL;
+	}
+
+	// make copy_entries lowercase version of dir_entries
+	for(i = 0; i < k; i++) 
+	{
+		j = i * 256;
+		while(dir_entries[j]) 
+		{
+			copy_entries[j] = dir_entries[j];
+
+			if(dir_entries[j] >= 'A' && dir_entries[j] <= 'Z')
+				copy_entries[j] += 32;
+			
+			j++;
+		}
+		
+		copy_entries[j] = '\0';
+	}
+
+	// compare copy_entries but sort dir_entries
+	for (i = 0; i < k - 1 ; i++)
+	{
+		for (j = i + 1; j < k; j++)
+		{
+			if (strcmp(&copy_entries[i * 256], &copy_entries[j * 256]) > 0) 
+			{
+				memcpy(temp, &dir_entries[i * 256], strlen(&dir_entries[i * 256]) + 1);
+				memcpy(&dir_entries[i * 256], &dir_entries[j * 256], strlen(&dir_entries[j * 256]) + 1);
+				memcpy(&dir_entries[j * 256], temp, strlen(temp) + 1);
+			}
+		}
+	}
+
+	free(temp);
+	free(copy_entries);
+
+	return dir_entries;
 }

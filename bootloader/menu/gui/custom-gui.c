@@ -28,9 +28,9 @@ custom_gui_t* custom_gui_load(char *back)
 {
     custom_gui_t* custom_gui = (custom_gui_t*)malloc(sizeof(custom_gui_t));
 	//custom backgroun for heach menu
-	custom_gui->custom_bg = (u8*)sd_file_read2(theme(back));
+	custom_gui->custom_bg = (u8*)sd_4_file_read2(theme(back));
 
-    //custom_gui->title_bmp = (u8*)sd_file_read2(CUSTOM_TITLE_PATH);
+    //custom_gui->title_bmp = (u8*)sd_4_file_read2(CUSTOM_TITLE_PATH);
     return custom_gui;
 }
 
@@ -46,8 +46,8 @@ bool render_custom_background(custom_gui_t* cg)
     if (cg->custom_bg == NULL)
         return false;
     
-    //gfx_render_bmp_arg_bitmap(&g_gfx_ctxt, cg->custom_bg, 0, 0, 1280, 720);
-    gfx_render_splash(&g_gfx_ctxt, cg->custom_bg);
+    //gfx_render_bmp_arg_bitmap( cg->custom_bg, 0, 0, 1280, 720);
+    gfx_render_splash( cg->custom_bg);
     return true;
 }
 
@@ -58,7 +58,7 @@ bool render_custom_title(custom_gui_t* cg)
 
     u32 bmp_width = (cg->title_bmp[0x12] | (cg->title_bmp[0x13] << 8) | (cg->title_bmp[0x14] << 16) | (cg->title_bmp[0x15] << 24));
     u32 bmp_height = (cg->title_bmp[0x16] | (cg->title_bmp[0x17] << 8) | (cg->title_bmp[0x18] << 16) | (cg->title_bmp[0x19] << 24));
-    gfx_render_bmp_arg_bitmap(&g_gfx_ctxt, cg->title_bmp, 420, 10, bmp_width, bmp_height);
+    gfx_render_bmp_arg_bitmap( cg->title_bmp, 420, 10, bmp_width, bmp_height);
     return true;
 }
 
@@ -126,12 +126,12 @@ SDStrap();
 	}
     u8* buff = (u8*)malloc(imagesize + 54);
     memcpy(buff, header, 54);
-    memcpy(buff + 54, g_gfx_ctxt.fb, imagesize);
-    sd_save_to_file(buff, imagesize + 54, namef);
+    memcpy(buff + 54, gfx_ctxt.fb, imagesize);
+    sd_save_2_file(buff, imagesize + 54, namef);
     free(buff);
 
-    g_gfx_con.scale = 2;
-    gfx_con_setpos(&g_gfx_con, 0, 605);
-    gfx_printf(&g_gfx_con, " Screenshot saved!\n Find it at %s",namef);
+    gfx_con.scale = 2;
+    gfx_con_setpos( 0, 605);
+    gfx_printf( " Screenshot saved!\n Find it at %s",namef);
     return 0;
 }
