@@ -78,13 +78,17 @@ touch_event touch_wait()
 		//some functions to buttons on touch wait
 //		if (btn_read() & BTN_VOL_DOWN) power_off();
 		
-		if (btn_read() & BTN_POWER)	BootStrapNX();
+		if (btn_read() & BTN_POWER)	power_set_state(POWER_OFF);//BootStrapNX();
 	
 		touch_poll(&event);
 		if (event.type == STMFTS_EV_MULTI_TOUCH_ENTER || event.type == STMFTS_EV_MULTI_TOUCH_MOTION){
 			maar=1;
-			if ((event.y + event.x) > 100)
+			if (event.y > 20 & event.x > 100)
 			{
+                
+                gfx_con_setpos(225, 225);
+				gfx_printf( "X:%d--Y:%d",event.y, event.x);
+
 				//draw pointier o enter
 				gfx_con.scale = 5;
 				gfx_con_setpos( event.y-25, event.x-25);
@@ -100,9 +104,9 @@ touch_event touch_wait()
 			event.type = STMFTS_EV_NO_EVENT;
 		}
 
-		if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE || event.type == STMFTS_EV_MULTI_TOUCH_ENTER ||  event.type == STMFTS_EV_MULTI_TOUCH_MOTION ) break;
+		//if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE || event.type == STMFTS_EV_MULTI_TOUCH_ENTER ||  event.type == STMFTS_EV_MULTI_TOUCH_MOTION ) break;
 
-	} while(true);
+	} while(event.type != STMFTS_EV_MULTI_TOUCH_LEAVE);
     
 	return event;
 }
@@ -150,7 +154,7 @@ bool is_rect_touched(touch_event* event, u32 x, u32 y, u32 width, u32 height)
         
     u32 event_x = event->y;
     u32 event_y = event->x;
-
+    if(true) return false;
     return event_x > x 
             && event_y > y
             && event_x < x + width
