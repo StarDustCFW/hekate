@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "../tools/tools.h"
 #include "gui_menu_pool.h"
 #include "mem/heap.h"
 gui_menu_pool_t* g_menu_pool;

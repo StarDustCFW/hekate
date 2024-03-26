@@ -10,9 +10,12 @@
 
 #include "utils/util.h"
 #include "../tools/fs_utils.h"
+#include <bdk.h>
+#include "../../config.h"
 
 char *type = "*";
 char *clip = "";
+extern hekate_config h_cfg;
 
 //ScriptHandler
 void lineHandler(char line[])
@@ -158,9 +161,16 @@ void clean_up()
 		deleteall("/pegascape", "*", "");
 		f_unlink("/switch/fakenews-injector.nro");
 	}
+    if (h_cfg.rcm_patched) {
+        f_unlink("/atmosphere/contents/010000000000000D/exefs.nsp");
+        f_unlink("/atmosphere/contents/0100000000001013/exefs.nsp");
+        //Start Updated Stardust Menu TODO...240326 ready
+        //_launch_payload("StarDust/payloads/hekate.bin", false, false);
+        return;
+    }
 
 	//Fix old Emunand transfer
-	fix_emu();
+	//fix_emu();
 
 	f_unlink("/fixer.del");
 	printerCU("", "", 1); //flush print
@@ -183,6 +193,7 @@ void Update_SDT(){
 		f_rename("/StarDust_update", "/StarDust_corrupt_update"); //just in case
 		launch_payload("payload.bin");
 	}
+
 }
 
 void fix_emu()

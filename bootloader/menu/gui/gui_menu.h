@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #define MAX_ENTRIES 0x80
+extern bool haschange;
 
 typedef struct
 {

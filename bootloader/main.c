@@ -289,7 +289,7 @@ out:
 		EPRINTF("Failed to launch payload!");
 	}
 }
-
+/*
 static void _launch_payloads()
 {
 	u8 max_entries = 61;
@@ -643,9 +643,9 @@ out:
 
 	btn_wait();
 }
-
+*/
 #define NYX_VER_OFF 0x9C
-
+/*
 static void _nyx_load_run()
 {
 	u8 *nyx = sd_file_read("bootloader/ssys/nyx.bin", NULL);
@@ -713,7 +713,8 @@ static void _nyx_load_run()
 	void (*nyx_ptr)() = (void *)nyx;
 	(*nyx_ptr)();
 }
-
+*/
+/*
 static ini_sec_t *_get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry, char **emummc_path)
 {
 	ini_sec_t *cfg_sec = NULL;
@@ -743,7 +744,8 @@ static ini_sec_t *_get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustom
 
 	return cfg_sec;
 }
-
+*/
+/*
 static void _bootloader_corruption_protect()
 {
 	FILINFO fno;
@@ -763,7 +765,7 @@ static void _check_for_updated_bootloader()
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
 	else
 	{
-        /*
+        
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
 			_launch_payload("bootloader/update.bin", true, false);
@@ -773,10 +775,10 @@ static void _check_for_updated_bootloader()
 			is_ipl_updated(buf, "bootloader/update.bin", true);
 			free(buf);
 		}
-        */
+        
 	}
 }
-/*
+
 static void _auto_launch()
 {
 	struct _bmp_data
@@ -1550,38 +1552,13 @@ skip_lp0_minerva_config:
 
 	// Overclock BPMP.
 	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
-    /*
 
 	// Get R2P config from RTC.
 	if (h_cfg.t210b01)
 		_r2p_get_config_t210b01();
     
     
-    //test
-    gfx_con.mute = false;
-    display_backlight_brightness(h_cfg.backlight, 1000);
-	gfx_con_setpos(10, 5);
-    gfx_con.scale = 1;
-    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
 
-    gfx_con.scale = 2;
-    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
-
-
-    gfx_con.scale = 3;
-    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
-
-    gfx_con.scale = 4;
-    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
-    gfx_con.fntsz = 8;
-    gfx_printf("//display_backlight_brightness(h_cfg.backlight, 1000);\n");
-    msleep(1000); // Guard against injection VOL+.
-    btn_wait();
-    msleep(500);  // Guard against force menu VOL-.
-    power_set_state(POWER_OFF_RESET);
-    _launch_payload("/payload.bin", false, true);
-    */
-    //anothermain();
     takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	//_show_errors();

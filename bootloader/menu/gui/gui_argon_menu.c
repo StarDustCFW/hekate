@@ -50,7 +50,7 @@ u32 brilloM = 50;
 const char *sysserial;
 const char *emuserial;
 char *buffer_blk;
-
+void int_menus();
 //menus
 u64 main_menu = 0;
 const char* imagemenus = "background.bmp";
@@ -150,7 +150,7 @@ void gui_init_argon_boot(void)
 
 	if (btn_read() & BTN_VOL_DOWN)
 		f_unlink("StarDust/autobootecho.txt");
-
+    int_menus();
 	pre_load_menus(0, 1);
 	gui_init_argon_menu();
 }
@@ -163,12 +163,20 @@ gui_menu_t *menu_3;
 gui_menu_t *menu_4;
 gui_menu_t *menu_5;
 
+void int_menus(){
+    menu_0 = gui_menu_create("ArgonNX", "background.bmp");
+    menu_1 = gui_menu_create("ArgonNX", "back-set.bmp");
+    menu_3 = gui_menu_create("ArgonNX", "back-mem.bmp");
+    menu_4 = gui_menu_create("ArgonNX", "back-inc.bmp");
+    menu_5 = gui_menu_create("ArgonNX", "back-exp.bmp");
+}
+
 void pre_load_menus(int menus, bool StarUp)
 {
 	SDStrap();
 	if (menus == 0 || StarUp)
 	{
-		menu_0 = gui_menu_create("ArgonNX", "background.bmp");
+
 		//generate main menu
 		u32 main_iconY = 200;
 		u32 main_iconX = 190;
@@ -286,7 +294,6 @@ void pre_load_menus(int menus, bool StarUp)
 		static int start_point = 0;
 		if (menu_1 == NULL || StarUp)
 		{
-			menu_1 = gui_menu_create("ArgonNX", "back-set.bmp");
 			//list custom skins
 			AThemes_list(menu_1, 80, 90);
             
@@ -359,7 +366,7 @@ void pre_load_menus(int menus, bool StarUp)
 		//		gui_menu_append_entry(menu_1,gui_create_menu_entry_no_bitmap("Services",servX+30, servY-10, 150, 100, NULL, NULL));
 		servstep = 0;
 		serv_display(menu_1, "420000000000000B", "SigPatch");
-		serv_display(menu_1, "010000000000bd00", "missionC");
+		serv_display(menu_1, "010000000000bd00", "MissionC");
 		serv_display(menu_1, "420000000007E51A", "TeslaOVL");
 		serv_display(menu_1, "420000000000000E", "FTP");
 		serv_display(menu_1, "690000000000000D", "Sys-Con");
@@ -428,7 +435,6 @@ void pre_load_menus(int menus, bool StarUp)
 
 	if (menus == 3)
 	{
-		menu_3 = gui_menu_create("ArgonNX", "back-mem.bmp");
 		//Menu Here
 		//call
 		create(menu_3, "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
@@ -437,7 +443,6 @@ void pre_load_menus(int menus, bool StarUp)
 
 	if (menus == 4)
 	{
-		menu_4 = gui_menu_create("ArgonNX", "back-inc.bmp");
 
 		//		incognito togle
 		//Getinfo from text
@@ -620,7 +625,6 @@ void pre_load_menus(int menus, bool StarUp)
 
 	if (menus == 5)//disabled
 	{
-		menu_5 = gui_menu_create("ArgonNX", "back-exp.bmp");
 /*
 		//List Files And folders
 		char *HBpath = "/switch";
@@ -702,15 +706,17 @@ void pre_load_menus(int menus, bool StarUp)
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
-	SDStrap();
-	/* Init pool for menu */
-	gui_menu_pool_init();
 	//	change_brightness(1);
 	//	menu = gui_menu_create("ArgonNX",main_menu);
 	//main menu 0-------------------------------------
+	/* Init pool for menu */
+	gui_menu_pool_init();
+ while(true){
+	SDStrap();
 	switch (main_menu)
 	{
 	case 0:
+	default:
 	{
 		if (menu_0 == NULL)
 			pre_load_menus(main_menu, 0);
@@ -760,13 +766,21 @@ void gui_init_argon_menu(void)
 	}
 	break;
 	}
+    gui_menu_push_to_pool((void*)menu);
 
 	static_menu_elements(menu);
 	/* Start menu_1 */
 	change_brightness(0);
+    
 	gui_menu_open(menu);
+    /*
+    gfx_con_setpos( 160, 50);
+    gfx_printf( "end off menu \n");
+*/
+ }
 	/* Clear all entries and menus */
 	gui_menu_pool_cleanup();
+    return;
 }
 
 int static_menu_elements(gui_menu_t *menu)
@@ -984,7 +998,7 @@ int tool_emu(u32 status)
 		pre_load_menus(0, 0);
 	}
 
-	gui_init_argon_menu();
+	haschange = true;//gui_init_argon_menu();
 	return 0;
 }
 
@@ -993,9 +1007,9 @@ int tool_Menus(u32 param)
 	SDStrap();
 	//set menu number
 	main_menu = param;
-
 	//gui_menu_pool_cleanup();
-	gui_init_argon_menu();
+    haschange = true;
+	//gui_init_argon_menu();
 	return 0;
 }
 
@@ -1023,7 +1037,8 @@ void tool_servises_on(char *title)
 		sd_save_2_file("", 0, path);
 	}
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//gui_init_argon_menu();
 }
 
 void tool_servises_off(char *title)
@@ -1046,7 +1061,8 @@ void tool_servises_off(char *title)
 		f_unlink(path);
 	}
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 }
 
 //Themes ON
@@ -1077,7 +1093,8 @@ void tool_Themes_on(char *cfw)
 		sd_save_2_file("", 0, "atmosphere/contents/0100000000001000/fsmitm.flag");
 	}
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 }
 
 //Themes OFF
@@ -1105,7 +1122,8 @@ void tool_Themes_off(char *cfw)
 		f_unlink("atmosphere/contents/0100000000001000/fsmitm.flag");
 	}
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 }
 
 //safe boot
@@ -1173,7 +1191,9 @@ int tool_theme(char *param)
 	change_brightness(1);
 	saveTheme(param);
 	pre_load_menus(1, 1);
-	gui_init_argon_menu();
+    haschange = true;
+    int_menus();
+	//	gui_init_argon_menu();
 	return 0;
 }
 
@@ -1195,7 +1215,8 @@ void serv_CFW(int cfw)
 	change_brightness(1);
 	isAMS = cfw;
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 }
 
 void serv_display(gui_menu_t *menu, char *titleid, char *name)
@@ -1285,7 +1306,8 @@ int Incognito(char *order){
 		u32 size = strlen(buffer_blk) - 1;
 		sd_save_2_file(buffer_blk, size, "atmosphere/config/exosphere.ini");
 		pre_load_menus(4, 0);
-		gui_init_argon_menu();
+        haschange = true;
+        //		gui_init_argon_menu();
 		return 0;
 	}
 
@@ -1303,7 +1325,8 @@ int Autoboot(u32 fil){
 		sd_save_2_file("", 0, "StarDust/autobootecho.txt");
 	
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 	return 0;
 };
 
@@ -1347,7 +1370,8 @@ void medislay(char *flags){
 	else
 		sd_save_2_file("", 0, "StarDust/flags/b50.flag");
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 }
 /**/
 
@@ -1383,7 +1407,8 @@ int uLaunch(u32 fil)
 	}
 	printerCU("", "", 1); //flush print
 	pre_load_menus(1, 0);
-	gui_init_argon_menu();
+    haschange = true;
+	//	gui_init_argon_menu();
 	return 0;
 }
 

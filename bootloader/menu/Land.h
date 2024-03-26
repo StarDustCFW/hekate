@@ -22,7 +22,6 @@ void takeoff(){
 		Update_SDT();
 		clean_up();
         
-        anothermain();
         minerva_change_freq(FREQ_800);
         //minerva_change_freq(FREQ_1600);
         
@@ -40,22 +39,4 @@ void takeoff(){
         msleep(5000); // Guard against injection VOL+.
         BootStrapNX();
 	}
-}
-void anothermain(){
-
-    if (btn_read_vol() == (BTN_VOL_UP)){
-        _launch_payload("/StarDust.bin", false, false);
-        _launch_payload("/StarDust_update/StarDust.bin", false, false);
-    }
-
-    if (h_cfg.rcm_patched) {
-        f_unlink("/StarDust/sys/minerva.bso");
-        f_unlink("/atmosphere/contents/010000000000000D/exefs.nsp");
-        f_unlink("/atmosphere/contents/0100000000001013/exefs.nsp");
-        //Start Updated Stardust Menu TODO...240326 ready
-        //_launch_payload("StarDust/payloads/hekate.bin", false, false);
-        return;
-    }
-
-return;
 }

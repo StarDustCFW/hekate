@@ -24,6 +24,8 @@
 
 char Sversion[4];
 bool haschange = false;
+extern u64 main_menu;
+u64 eme;
 
 /* Render the menu */
 static void gui_menu_render_menu(gui_menu_t*);
@@ -43,7 +45,7 @@ gui_menu_t *gui_menu_create(const char *title,char *back)
 	strcpy(menu->title, title);
 	menu->next_entry = 0;
 	menu->selected_index = 0;
-    gui_menu_push_to_pool((void*)menu);
+    //gui_menu_push_to_pool((void*)menu);
 	return menu;
 }
 
@@ -112,14 +114,14 @@ Blank 0xFFCCCCCC
 verde 0xFF00FF22
 */	
 }
-
+/*
 static void gui_menu_render_menu(gui_menu_t* menu) 
 {
     gui_menu_draw_background(menu);
     gui_menu_draw_entries(menu);
     gfx_swap_buffer();
 }
-
+*/
 static void gui_menu_draw_entries(gui_menu_t *menu)
 {
     for (s16 i = 0; i < menu->next_entry; i++)
@@ -130,33 +132,41 @@ static void gui_menu_draw_entries(gui_menu_t *menu)
 static int gui_menu_update(gui_menu_t *menu)
 {
     u32 res = 0;
-    if (haschange){
-        gui_menu_draw_background(menu);
-        gui_menu_draw_entries(menu);
-        haschange = false;
-    }
-
     res = handle_touch_input(menu);
-
+    if (eme != main_menu || haschange){
+        res = 0;
+    }
     gfx_swap_buffer();
-
     return res;
 }
 
 int gui_menu_open(gui_menu_t *menu)
 {
-
     gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
+    gui_menu_draw_background(menu);
+    gui_menu_draw_entries(menu);
+    gfx_swap_buffer();
     /* 
      * Render and flush at first render because blocking input won't allow us 
      * flush buffers
      */
     //gui_menu_render_menu(menu);
-	//sd_unmount();
-    haschange = true;
-	while (gui_menu_update(menu))
-    ;
+//	sd_unmount();
+    eme = main_menu;
+    //haschange = true;
+    haschange = false;
+    u32 res = 1;
+	while (res){
+        res = handle_touch_input(menu);
+        if (haschange){//eme != main_menu ||
+            /*
+            	gfx_con_setpos( 160, 100);
+                gfx_printf( "cambio a %d desde %d\n",main_menu,eme);
+            */
 
+            break;
+        }
+    }
 	return 0;
 }
 
@@ -168,7 +178,7 @@ int gui_menu_boot(gui_menu_t *menu)
      */
 		if (sd_file_exists("StarDust/autobootecho.txt")&& !sd_file_exists("StarDust/autoboot.inc"))
 		{
-		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
+            gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
 			if(!render_custom_background(menu->custom_gui))
 				gfx_clear_color( 0xFF191414);
 			gfx_con.scale = 3;
@@ -236,8 +246,6 @@ static int handle_touch_input(gui_menu_t *menu)
 				}
 			}
 		}
-
-	
 
     return 1;
 }

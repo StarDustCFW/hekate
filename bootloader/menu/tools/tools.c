@@ -124,10 +124,12 @@ return mine;
 
 void SDStrap(){
 //check sd
+/*
 	if (!sd_mount())
 	{
 		BootStrapNX();
 	} 
+*/
 }
 
 void BootStrapNX()
