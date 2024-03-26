@@ -820,6 +820,7 @@ int tool_extr_rSD(void *param)
 	SDStrap();
 	gui_menu_pool_cleanup();
 	gfx_swap_buffer();
+    gfx_clear_grey(0x00);
 	change_brightness(0);
 	gfx_con.scale = 3;
 	gfx_con_setpos( 160, 100);

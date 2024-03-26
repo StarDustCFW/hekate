@@ -24,7 +24,8 @@ void takeoff(){
         
         anothermain();
         minerva_change_freq(FREQ_800);
-
+        //minerva_change_freq(FREQ_1600);
+        
 		/* Cofigure touch input */
 		touch_power_on();
         

@@ -84,13 +84,13 @@ static void gui_menu_draw_background(gui_menu_t* menu)
                     Sversion[1] = str[1];
                     Sversion[2] = str[2];
                     Sversion[3] = str[3];		
-                    Sversion[4] = '\0';		
                 }
                 
             }
             a = false;
         }
 
+        Sversion[4] = '\0';		
 		gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
 		gfx_con.scale = 2;
 		gfx_con_setpos( 1200, 50);
