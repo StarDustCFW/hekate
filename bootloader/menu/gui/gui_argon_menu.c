@@ -1190,9 +1190,9 @@ int tool_theme(char *param)
 	SDStrap();
 	change_brightness(1);
 	saveTheme(param);
-	pre_load_menus(1, 1);
     haschange = true;
     int_menus();
+	pre_load_menus(1, 1);
 	//	gui_init_argon_menu();
 	return 0;
 }
