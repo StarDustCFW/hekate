@@ -151,6 +151,30 @@ void BootStrapNX()
     gfx_clear_grey(0x00);
     while (btn_read() & BTN_POWER);
     display_backlight_brightness(a, 1000);
+    
+		gfx_con.fntsz = 16;
+		gfx_con_setpos(1,1);
+		gfx_printf("%k%d%k%k%d%k%k%s%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0XFFEA2F1E, burntFuses ,0xFFCCCCCC ,0XFF331AD8 ,mindowngrade ,0xFFCCCCCC);
+		//gfx_con.fntsz = 8;
+		gfx_con_setpos(1, 20);
+		gfx_con_setcol(0xFF008F39, 0xFF726F68, 0xFF191414);
+		gfx_printf("BootStrapNX\n");
+		gfx_con_setcol(0xFFF9F9F9, 0, 0xFF191414);
+		gfx_con_setpos(1, 38);
+		gfx_printf("StarDustCFW\n");
+		
+		
+		//Draw Footer
+		gfx_con.fntsz = 16;
+		gfx_con_setpos(letX, letY+250);
+		gfx_printf("Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
+		gfx_con_setpos(letX, letY+280);
+		gfx_printf("Hold %kVol+ POWER%k To Reboot RCM\n",0xFF331ad8,0xFFF9F9F9);
+		gfx_con_setpos(letX, letY+310);
+		gfx_printf("Hold %kPOWER%k To Full Power Off\n",0xFF331ad8,0xFFF9F9F9);
+		
+
+
 	while (true)
 	{
         
@@ -160,19 +184,22 @@ void BootStrapNX()
 			res = btn_read();
             max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
             battPercent = (battPercent >> 8) & 0xFF;
+            gfx_con_setcol(0xFFF9F9F9, 0xFF726F68, 0xFF191414);
+            gfx_con_setpos(1, 54);
+            gfx_printf("%d%%", battPercent);
+
 			if (battPercent < 5){power_set_state(POWER_OFF);}
 			msleep(200);
 			if (count>0){
 				count--;
 				if (count==0){
                     display_backlight_brightness(a, 1000);
-                    gfx_clear_grey(0x00);
+                    //gfx_clear_grey(0x00);
                 } else  if (count<=countfull/3){
                     display_backlight_brightness(c, 1000);
                 }
 			}
 		} while (btn == res);
-        gfx_clear_grey(0x00);
 		if (res & BTN_POWER) {
 			if (btn_read() & BTN_VOL_UP){power_set_state(REBOOT_RCM);}
 			
@@ -180,6 +207,7 @@ void BootStrapNX()
 			if (btn_read() & BTN_POWER) msleep(1000);
 			if (btn_read() & BTN_POWER) msleep(1000);
 			if (btn_read() & BTN_POWER){
+                gfx_clear_grey(0x00);
                 display_backlight_brightness(b, 1000);
 				power_set_state(POWER_OFF);
 			}
@@ -204,31 +232,10 @@ void BootStrapNX()
 			power_set_state(POWER_OFF);
 		}
 
-		gfx_con.fntsz = 16;
-		gfx_con_setpos(1,1);
-		gfx_printf("%k%d%k%k%d%k%k%s%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0XFFEA2F1E, burntFuses ,0xFFCCCCCC ,0XFF331AD8 ,mindowngrade ,0xFFCCCCCC);
-//		gfx_con.fntsz = 16;
-		gfx_con_setpos(1, 20);
-		gfx_con_setcol(0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf("BootStrapNX\n");
-		gfx_con_setcol(0xFFF9F9F9, 0, 0xFF191414);
-		gfx_con_setpos(1, 38);
-		gfx_printf("StarDustCFW\n");
-		gfx_con_setpos(1120, 1);
-		gfx_printf("%d%%", battPercent);
-		
-		
-		//Draw Footer
-		gfx_con.fntsz = 16;
-		gfx_con_setpos(letX, letY+250);
-		gfx_printf("Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
-		gfx_con_setpos(letX, letY+280);
-		gfx_printf("Hold %kVol+ POWER%k To Reboot RCM\n",0xFF331ad8,0xFFF9F9F9);
-		gfx_con_setpos(letX, letY+310);
-		gfx_printf("Hold %kPOWER%k To Full Power Off\n",0xFF331ad8,0xFFF9F9F9);
-		
 		display_backlight_brightness(b, 1000);
 		//gfx_clear_grey(0x00);
+        gfx_swap_buffer();
+
         //msleep(1000);
 		count=countfull;
 	}

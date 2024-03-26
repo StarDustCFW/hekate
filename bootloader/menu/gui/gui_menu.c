@@ -23,6 +23,7 @@
 #define REVI_VERSION LOAD_BUILD_VER
 
 char Sversion[4];
+bool haschange = false;
 
 /* Render the menu */
 static void gui_menu_render_menu(gui_menu_t*);
@@ -69,23 +70,27 @@ static void gui_menu_draw_background(gui_menu_t* menu)
 //        gfx_printf( "ArgonNX v%d.%d %k%d%k", MAJOR_VERSION, MINOR_VERSION,0xFF00FF22, REVI_VERSION ,0xFFCCCCCC);
  //   }
        //StarDust version
-		char *str;
-		if (sd_mount()){
-			void *buf;
-			buf = sd_4_file_read2("StarDust/StarDustV.txt");
-			str = buf;
-			if (strlen(str)!=0)
-			{
-				
-                Sversion[0] = str[0];
-                Sversion[1] = str[1];
-                Sversion[2] = str[2];
-                Sversion[3] = str[3];		
-			}
-			
-		}
-		
-		
+        static bool a = true;
+        if (a){
+            if (sd_mount()){
+                char *str;
+                void *buf;
+                buf = sd_4_file_read2("StarDust/StarDustV.txt");
+                str = buf;
+                if (strlen(str)!=0)
+                {
+                    
+                    Sversion[0] = str[0];
+                    Sversion[1] = str[1];
+                    Sversion[2] = str[2];
+                    Sversion[3] = str[3];		
+                    Sversion[4] = '\0';		
+                }
+                
+            }
+            a = false;
+        }
+
 		gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
 		gfx_con.scale = 2;
 		gfx_con_setpos( 1200, 50);
@@ -125,9 +130,11 @@ static void gui_menu_draw_entries(gui_menu_t *menu)
 static int gui_menu_update(gui_menu_t *menu)
 {
     u32 res = 0;
-
-    gui_menu_draw_background(menu);
-    gui_menu_draw_entries(menu);
+    if (haschange){
+        gui_menu_draw_background(menu);
+        gui_menu_draw_entries(menu);
+        haschange = false;
+    }
 
     res = handle_touch_input(menu);
 
@@ -144,28 +151,11 @@ int gui_menu_open(gui_menu_t *menu)
      * Render and flush at first render because blocking input won't allow us 
      * flush buffers
      */
-    gui_menu_render_menu(menu);
-	sd_unmount();
-
-
+    //gui_menu_render_menu(menu);
+	//sd_unmount();
+    haschange = true;
 	while (gui_menu_update(menu))
     ;
-
-	return 0;
-}
-
-int gui_menu_open3(gui_menu_t *menu)
-{
-
-    gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
-    /* 
-     * Render and flush at first render because blocking input won't allow us 
-     * flush buffers
-     */
-//    gui_menu_render_menu(menu);
-
-
-	gui_menu_update(menu);
 
 	return 0;
 }

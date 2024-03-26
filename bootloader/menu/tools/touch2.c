@@ -76,30 +76,34 @@ touch_event touch_wait()
 	do 
 	{
 		//some functions to buttons on touch wait
-//		if (btn_read() & BTN_VOL_DOWN) power_off();
+		if (btn_read() & BTN_VOL_DOWN) power_set_state(POWER_OFF);
 		
-		if (btn_read() & BTN_POWER)	power_set_state(POWER_OFF);//BootStrapNX();
+		if (btn_read() & BTN_POWER)	BootStrapNX();
 	
 		touch_poll(&event);
 		if (event.type == STMFTS_EV_MULTI_TOUCH_ENTER || event.type == STMFTS_EV_MULTI_TOUCH_MOTION){
 			maar=1;
 			if (event.touch)//(event.y > 20 & event.x > 100)
 			{
+                /*
                 if (event.y < 1280 & event.x < 1280){
                     gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
                     gfx_con_setpos(225, 225);
                     gfx_printf( "X:%d--Y:%d",event.y, event.x);
+                    //draw pointier o enter
+                    gfx_con.scale = 5;
+                    gfx_con_setpos( event.x-25,event.y-25);
+                    gfx_printf( "X");
                 }
-				//draw pointier o enter
-				gfx_con.scale = 5;
-				gfx_con_setpos( event.x-25,event.y-25);
-				gfx_printf( "X");
+                */
 			}
 			
 		} else if(maar==1) {
 			//if not touching screen, then leave just once per touch
 			maar=0;
 			event.type = STMFTS_EV_MULTI_TOUCH_LEAVE;
+                
+            //gfx_swap_buffer();
 		} else {
 			//this evoid the repeated event
 			event.type = STMFTS_EV_NO_EVENT;

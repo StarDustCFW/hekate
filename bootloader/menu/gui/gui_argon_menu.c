@@ -95,7 +95,7 @@ void gui_init_argon_boot(void)
 	}
 			
 
-	//if (res > 0){gfx_swap_buffer();}
+	if (res > 0){gfx_swap_buffer();}
 	//corrections on start
 	f_mkdir("StarDust/flags");
 	f_unlink("auto.bak");
@@ -359,9 +359,9 @@ void pre_load_menus(int menus, bool StarUp)
 		//		gui_menu_append_entry(menu_1,gui_create_menu_entry_no_bitmap("Services",servX+30, servY-10, 150, 100, NULL, NULL));
 		servstep = 0;
 		serv_display(menu_1, "420000000000000B", "SigPatch");
+		serv_display(menu_1, "010000000000bd00", "missionC");
 		serv_display(menu_1, "420000000007E51A", "TeslaOVL");
 		serv_display(menu_1, "420000000000000E", "FTP");
-		serv_display(menu_1, "010000000000bd00", "MissionCon");
 		serv_display(menu_1, "690000000000000D", "Sys-Con");
 		serv_display(menu_1, "4200000000000010", "LanPlay");
 		serv_display(menu_1, "00FF0000A53BB665", "SysDVR");
@@ -819,7 +819,7 @@ int tool_extr_rSD(void *param)
 {
 	SDStrap();
 	gui_menu_pool_cleanup();
-	//gfx_swap_buffer();
+	gfx_swap_buffer();
 	change_brightness(0);
 	gfx_con.scale = 3;
 	gfx_con_setpos( 160, 100);
@@ -830,7 +830,7 @@ int tool_extr_rSD(void *param)
 	gfx_printf( "You can now extract the SD, When you finish\n");
 	gfx_con_setpos( 230, 630);
 	gfx_printf( "Put the SD and press POWER\n");
-	//gfx_swap_buffer();
+	gfx_swap_buffer();
 	btn_wait_timeout(10000, BTN_POWER);
 	display_backlight_brightness(0, 1000);
 	/* Clear all entries and menus */
@@ -1415,7 +1415,7 @@ void hekateOFW(u32 tipo) {
 
 int launcher(char *path){
 	SDStrap();
-	//gfx_swap_buffer();
+	gfx_swap_buffer();
 	display_backlight_brightness(30, 1000);	
 
 	u32 bootS = sd_file_size("StarDust/boot.dat");
@@ -1441,7 +1441,7 @@ int launcher(char *path){
 		if (bootS != bootR){
 			gfx_con_setpos( 370, 350);
 			gfx_printf( "Loading Boot.dat\n",bootS,bootR);
-			//gfx_swap_buffer();
+			gfx_swap_buffer();
 			copyfile("StarDust/boot.dat","boot.dat");
 		}
 			
