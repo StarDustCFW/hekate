@@ -112,7 +112,7 @@ static void gui_menu_render_menu(gui_menu_t* menu)
 {
     gui_menu_draw_background(menu);
     gui_menu_draw_entries(menu);
-    //gfx_swap_buffer(&g_gfx_ctxt);
+    gfx_swap_buffer();
 }
 
 static void gui_menu_draw_entries(gui_menu_t *menu)
@@ -131,7 +131,7 @@ static int gui_menu_update(gui_menu_t *menu)
 
     res = handle_touch_input(menu);
 
-    //gfx_swap_buffer(&g_gfx_ctxt);
+    gfx_swap_buffer();
 
     return res;
 }

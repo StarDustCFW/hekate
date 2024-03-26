@@ -85,13 +85,14 @@ touch_event touch_wait()
 			maar=1;
 			if (event.touch)//(event.y > 20 & event.x > 100)
 			{
-                
-                gfx_con_setpos(225, 225);
-				gfx_printf( "X:%d--Y:%d",event.y, event.x);
-
+                if (event.y < 1280 & event.x < 1280){
+                    gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
+                    gfx_con_setpos(225, 225);
+                    gfx_printf( "X:%d--Y:%d",event.y, event.x);
+                }
 				//draw pointier o enter
 				gfx_con.scale = 5;
-				gfx_con_setpos( event.y-25, event.x-25);
+				gfx_con_setpos( event.x-25,event.y-25);
 				gfx_printf( "X");
 			}
 			
@@ -152,9 +153,9 @@ bool is_rect_touched(touch_event* event, u32 x, u32 y, u32 width, u32 height)
     if (event == NULL)
         return false;
         
-    u32 event_x = event->y;
-    u32 event_y = event->x;
-    if(true) return false;
+    u32 event_x = event->x;
+    u32 event_y = event->y;
+    //if(true) return false;
     return event_x > x 
             && event_y > y
             && event_x < x + width

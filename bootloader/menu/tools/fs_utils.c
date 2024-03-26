@@ -125,7 +125,7 @@ void copyfile(const char* source, const char* target)
     if (f_open(&fp, source, FA_READ) != FR_OK)
     {
         gfx_printf( "file %s mising\n",source);
-        //gfx_swap_buffer(&gfx_ctxt);
+        gfx_swap_buffer();
         //msleep(3000);
 	}else{
         u32 size = f_size(&fp);
@@ -145,13 +145,13 @@ void copyfileparam(char* param, char* source, char* target)
         gfx_con_setpos( 15, 50);
 		gfx_printf( "--------------\n",path);
 		gfx_printf( "copy %s %s\n",path ,target);
-	    gfx_swap_buffer(&gfx_ctxt);
+	    gfx_swap_buffer();
 */		
     FIL fp;
     if (f_open(&fp, path, FA_READ) != FR_OK)
     {
 		gfx_printf( "file %s mising\n",path);
-	    //gfx_swap_buffer(&gfx_ctxt);
+	    gfx_swap_buffer();
 		msleep(3000);
     }else{
         u32 size = f_size(&fp);
@@ -180,7 +180,7 @@ void copy_folder(char* sourse_folder, char* dest_folder)
             strcat(dest_file, &Files[i * 256]);
             gfx_con_setpos( 10, 90);
             gfx_printf( "\ncopy %s to %s\n",source_file,dest_file);
-            //gfx_swap_buffer(&gfx_ctxt);
+            gfx_swap_buffer();
             copyfile(source_file,dest_file);//action
         }
         i++;

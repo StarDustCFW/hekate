@@ -147,8 +147,20 @@ void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride)
 	gfx_ctxt.width = width;
 	gfx_ctxt.height = height;
 	gfx_ctxt.stride = stride;
+    gfx_ctxt.next = fb + gfx_ctxt.width * gfx_ctxt.stride * 4;
 }
-
+void gfx_clear_buffer()
+{
+    memset(gfx_ctxt.next, 0, gfx_ctxt->width * gfx_ctxt->stride * 4);
+}
+void gfx_swap_buffer()
+{
+    u32* tmp = gfx_ctxt->fb;
+    gfx_ctxt.fb = gfx_ctxt->next;
+    gfx_ctxt.next = tmp;
+    //set_active_framebuffer(gfx_ctxt->fb);
+    gfx_clear_buffer(gfx_ctxt);
+}
 void gfx_con_init()
 {
 	gfx_con.gfx_ctxt = &gfx_ctxt;

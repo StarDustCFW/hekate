@@ -250,7 +250,7 @@ void printerCU(char *text,const char *title,int clean)
 			strcpy(titw, "\0");
 			return;
 		}
-		//if (clean != 2) gfx_swap_buffer(&gfx_ctxt);
+		if (clean != 2) gfx_swap_buffer();
 		
 		gfx_con.scale = 3;
 		gfx_con_setpos( 10, 5);
@@ -260,7 +260,7 @@ void printerCU(char *text,const char *title,int clean)
 		gfx_con.scale = 2;
 		gfx_printf( "%s\n",buff);
 		gfx_printf( "\n->%s<-\n",text);
-		//gfx_swap_buffer(&gfx_ctxt);
+		gfx_swap_buffer();
 		if (clean > 100){msleep(clean);clean=2;}
 		if (clean == 0)
 		{

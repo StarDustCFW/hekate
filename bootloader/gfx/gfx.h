@@ -46,6 +46,7 @@
 typedef struct _gfx_ctxt_t
 {
 	u32 *fb;
+    u32* next;
 	u32 width;
 	u32 height;
 	u32 stride;
@@ -81,6 +82,10 @@ extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
 
 void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride);
+
+void gfx_swap_buffer();
+void gfx_clear_buffer();
+
 void gfx_clear_grey(u8 color);
 void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height);
 void gfx_clear_color(u32 color);

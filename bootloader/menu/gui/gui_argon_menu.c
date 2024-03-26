@@ -95,7 +95,7 @@ void gui_init_argon_boot(void)
 	}
 			
 
-	//if (res > 0){gfx_swap_buffer(&gfx_ctxt);}
+	//if (res > 0){gfx_swap_buffer();}
 	//corrections on start
 	f_mkdir("StarDust/flags");
 	f_unlink("auto.bak");
@@ -819,7 +819,7 @@ int tool_extr_rSD(void *param)
 {
 	SDStrap();
 	gui_menu_pool_cleanup();
-	//gfx_swap_buffer(&gfx_ctxt);
+	//gfx_swap_buffer();
 	change_brightness(0);
 	gfx_con.scale = 3;
 	gfx_con_setpos( 160, 100);
@@ -830,7 +830,7 @@ int tool_extr_rSD(void *param)
 	gfx_printf( "You can now extract the SD, When you finish\n");
 	gfx_con_setpos( 230, 630);
 	gfx_printf( "Put the SD and press POWER\n");
-	//gfx_swap_buffer(&gfx_ctxt);
+	//gfx_swap_buffer();
 	btn_wait_timeout(10000, BTN_POWER);
 	display_backlight_brightness(0, 1000);
 	/* Clear all entries and menus */
@@ -1415,7 +1415,7 @@ void hekateOFW(u32 tipo) {
 
 int launcher(char *path){
 	SDStrap();
-	//gfx_swap_buffer(&gfx_ctxt);
+	//gfx_swap_buffer();
 	display_backlight_brightness(30, 1000);	
 
 	u32 bootS = sd_file_size("StarDust/boot.dat");
@@ -1441,7 +1441,7 @@ int launcher(char *path){
 		if (bootS != bootR){
 			gfx_con_setpos( 370, 350);
 			gfx_printf( "Loading Boot.dat\n",bootS,bootR);
-			//gfx_swap_buffer(&gfx_ctxt);
+			//gfx_swap_buffer();
 			copyfile("StarDust/boot.dat","boot.dat");
 		}
 			
