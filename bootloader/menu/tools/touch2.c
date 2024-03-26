@@ -83,7 +83,7 @@ touch_event touch_wait()
 		touch_poll(&event);
 		if (event.type == STMFTS_EV_MULTI_TOUCH_ENTER || event.type == STMFTS_EV_MULTI_TOUCH_MOTION){
 			maar=1;
-			if (event.y > 20 & event.x > 100)
+			if (event.touch)//(event.y > 20 & event.x > 100)
 			{
                 
                 gfx_con_setpos(225, 225);

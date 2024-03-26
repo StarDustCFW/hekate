@@ -228,7 +228,7 @@ void gfx_putc(char c)
 					gfx_con.y = 0;
 
 					if (!gfx_column)
-						gfx_column = 1040;
+						gfx_column = 640;
 					else
 						gfx_column = 0;
 					gfx_con.x = gfx_column;
@@ -244,7 +244,7 @@ void gfx_putc(char c)
 				gfx_con.y = 0;
 
 				if (!gfx_column)
-					gfx_column = 1040;
+					gfx_column = 640;
 				else
 					gfx_column = 0;
 				gfx_con.x = gfx_column;
@@ -279,7 +279,7 @@ void gfx_putc(char c)
 					gfx_con.y = 0;
 
 					if (!gfx_column)
-						gfx_column = 1040;
+						gfx_column = 640;
 					else
 						gfx_column = 0;
 					gfx_con.x = gfx_column;
@@ -295,7 +295,7 @@ void gfx_putc(char c)
 				gfx_con.y = 0;
 
 				if (!gfx_column)
-					gfx_column = 1040;
+					gfx_column = 640;
 				else
 					gfx_column = 0;
 				gfx_con.x = gfx_column;
@@ -525,7 +525,7 @@ static int abs(int x)
 
 void gfx_set_pixel(u32 x, u32 y, u32 color)
 {
-	gfx_ctxt.fb[x + y * gfx_ctxt.stride] = color;
+	gfx_ctxt.fb[y + (gfx_ctxt.width - x) * gfx_ctxt.stride] = color;
 }
 
 void gfx_line(int x0, int y0, int x1, int y1, u32 color)
