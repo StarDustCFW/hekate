@@ -1187,29 +1187,40 @@ int _sd_storage_set_driver_type(sdmmc_storage_t *storage, u32 driver, u8 *buf)
 /*
  * SD Card DDR200 (DDR208) support
  *
- * Proper procedure:
+ * DLL Tuning (a) or Tuning Window (b) procedure:
  * 1. Check that Vendor Specific Command System is supported.
  *    Used as Enable DDR200 Bus.
  * 2. Enable DDR200 bus mode via setting 14 to Group 2 via CMD6.
  *    Access Mode group is left to default 0 (SDR12).
  * 3. Setup clock to 200 or 208 MHz.
- * 4. Set host to DDR bus mode that supports such high clocks.
- *    Some hosts have special mode, others use DDR50 and others HS400.
- * 5. Execute Tuning.
+ * 4a. Set host to DDR200/HS400 bus mode that enables DLL syncing.
+ *     Actual implementation supported by all DDR200 cards.
+ * --
+ * 4b. Set host to DDR50 bus mode that supports such high clocks.
+ *     Execute Manual Tuning.
+ *     Limited to non-Sandisk cards.
  *
- * The true validation that this value in Group 2 activates it, is that DDR50 bus
- * and clocks/timings work fully after that point.
+ * On Tegra SoCs, that can be done with DDR50 host mode.
+ * That's because HS400 4-bit or HS400 generally, is not supported on SD SDMMC.
+ * And also, tuning can't be done automatically on any DDR mode.
+ * So it needs to be done manually and selected tap will be applied from the
+ * biggest sampling window.
+ * That allows DDR200 support on every DDR200 SD card, other than the original
+ * maker of DDR200, Sandisk.
  *
- * On Tegra X1, that can be done with DDR50 host mode.
- * Tuning though can't be done automatically on any DDR mode.
- * So it needs to be done manually and selected tap will be applied from the biggest
- * sampling window.
+ * On the original implementation of DDR200 from Sandisk, a DLL mechanism,
+ * like the one in eMMC HS400 is mandatory.
+ * So the card can start data signals whenever it wants, and the host should
+ * synchronize to the first DAT signal edge change.
+ * Every single other vendor that implemented that, always starts data transfers
+ * aligned to clock. That basically makes DDR200 in such SD cards a SDR104 but
+ * sampled on both edges. So effectively, it's an in-spec signal with DDR50,
+ * only that is clocked at 200MHz, instead of 50MHz.
+ * So the extra needed thing is using a tuning window, which is absent from the
+ * original implementation, since DDL syncing does not use that.
  *
- * Finally, all that simply works, because the marketing materials for DDR200 are
- * basically overstatements to sell the feature. DDR200 is simply SDR104 in DDR mode,
- * so sampling on rising and falling edge and with variable output data window.
- * It can be supported by any host that is fast enough to support DDR at 200/208MHz
- * and can do hw/sw tuning for finding the proper sampling window in that mode.
+ * On DLL tuning method expected cards, the tuning window is tiny.
+ * So check against a minimum of 8 taps window, to disallow DDR200.
  */
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 static int _sd_storage_enable_DDR200(sdmmc_storage_t *storage, u8 *buf)
@@ -1281,21 +1292,36 @@ static int _sd_storage_set_card_bus_speed(sdmmc_storage_t *storage, u32 hs_type,
 	return 0;
 }
 
-static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
+int sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *fmodes)
 {
-	if (sdmmc_get_bus_width(storage->sdmmc) != SDMMC_BUS_WIDTH_4)
-		return 0;
+	if (!buf)
+		buf = (u8 *)SDMMC_UPPER_BUFFER;
 
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
 
-	u8  access_mode = buf[13];
-	u16 power_limit = buf[7]  | (buf[6]  << 8);
+	fmodes->access_mode     = buf[13] | (buf[12] << 8);
+	fmodes->cmd_system      = buf[11] | (buf[10] << 8);
+	fmodes->driver_strength = buf[9]  | (buf[8]  << 8);
+	fmodes->power_limit     = buf[7]  | (buf[6]  << 8);
+
+	return 1;
+}
+
+static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
+{
+	sd_func_modes_t fmodes;
+
+	if (sdmmc_get_bus_width(storage->sdmmc) != SDMMC_BUS_WIDTH_4)
+		return 0;
+
+	if (!sd_storage_get_fmodes(storage, buf, &fmodes))
+		return 0;
+
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
-	u16 cmd_system  = buf[11] | (buf[10] << 8);
-	DPRINTF("[SD] access: %02X, power: %02X, cmd: %02X\n", access_mode, power_limit, cmd_system);
+	DPRINTF("[SD] access: %02X, power: %02X, cmd: %02X\n", fmodes.access_mode, fmodes.power_limit, fmodes.cmd_system);
 #else
-	DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
+	DPRINTF("[SD] access: %02X, power: %02X\n", fmodes.access_mode, fmodes.power_limit);
 #endif
 
 	u32 hs_type = 0;
@@ -1304,11 +1330,11 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 	case SDHCI_TIMING_UHS_DDR200:
 		// Fall through if DDR200 is not supported.
-		if (cmd_system & SD_MODE_UHS_DDR200)
+		if (fmodes.cmd_system & SD_MODE_UHS_DDR200)
 		{
 			DPRINTF("[SD] setting bus speed to DDR200\n");
 			storage->csd.busspeed = 200;
-			_sd_storage_set_power_limit(storage, power_limit, buf);
+			_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 			return _sd_storage_enable_DDR200(storage, buf);
 		}
 #endif
@@ -1316,7 +1342,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 		// Fall through if not supported.
-		if (access_mode & SD_MODE_UHS_SDR104)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR104)
 		{
 			type    = SDHCI_TIMING_UHS_SDR104;
 			hs_type = UHS_SDR104_BUS_SPEED;
@@ -1334,7 +1360,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 
 	case SDHCI_TIMING_UHS_SDR50:
-		if (access_mode & SD_MODE_UHS_SDR50)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR50)
 		{
 			type    = SDHCI_TIMING_UHS_SDR50;
 			hs_type = UHS_SDR50_BUS_SPEED;
@@ -1344,7 +1370,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 /*
 	case SDHCI_TIMING_UHS_DDR50:
-		if (access_mode & SD_MODE_UHS_DDR50)
+		if (fmodes.access_mode & SD_MODE_UHS_DDR50)
 		{
 			type    = SDHCI_TIMING_UHS_DDR50;
 			hs_type = UHS_DDR50_BUS_SPEED;
@@ -1354,7 +1380,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 */
 	case SDHCI_TIMING_UHS_SDR25:
-		if (access_mode & SD_MODE_UHS_SDR25)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR25)
 		{
 			type = SDHCI_TIMING_UHS_SDR25;
 			hs_type = UHS_SDR25_BUS_SPEED;
@@ -1371,7 +1397,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 
 	// Try to raise the power limit to let the card perform better.
 	if (hs_type != UHS_SDR25_BUS_SPEED)
-		_sd_storage_set_power_limit(storage, power_limit, buf);
+		_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
 	// Setup and set selected card and bus speed.
 	if (!_sd_storage_set_card_bus_speed(storage, hs_type, buf))
@@ -1391,17 +1417,17 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 
 static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 {
-	if (!_sd_storage_switch_get(storage, buf))
+	sd_func_modes_t fmodes;
+
+	if (!sd_storage_get_fmodes(storage, buf, &fmodes))
 		return 0;
 
-	u8  access_mode = buf[13];
-	u16 power_limit = buf[7] | buf[6] << 8;
-	DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
+	DPRINTF("[SD] access: %02X, power: %02X\n", fmodes.access_mode, fmodes.power_limit);
 
 	// Try to raise the power limit to let the card perform better.
-	_sd_storage_set_power_limit(storage, power_limit, buf);
+	_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
-	if (!(access_mode & SD_MODE_HIGH_SPEED))
+	if (!(fmodes.access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
 
 	if (!_sd_storage_set_card_bus_speed(storage, HIGH_SPEED_BUS_SPEED, buf))

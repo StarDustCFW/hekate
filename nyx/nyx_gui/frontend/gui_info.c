@@ -33,8 +33,6 @@ extern volatile nyx_storage_t *nyx_str;
 extern lv_res_t launch_payload(lv_obj_t *list);
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-static u8 *cal0_buf = NULL;
-
 static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -99,25 +97,9 @@ static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 	if (!error)
 	{
 		char path[64];
-		u8 *buf = (u8 *)malloc(0x100 * 2);
+		void *buf = malloc(0x100 * 2);
 
-		// Unlock model table.
-		u16 unlock = 0x59;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
-		unlock = 0xC4;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
-
-		// Dump all battery fuel gauge registers.
-		for (int i = 0; i < 0x200; i += 2)
-		{
-			i2c_recv_buf_small(buf + i, 2, I2C_1, MAXIM17050_I2C_ADDR, i >> 1);
-			msleep(1);
-		}
-
-		// Lock model table.
-		unlock = 0;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
+		max17050_dump_regs(buf);
 
 		emmcsn_path_impl(path, "/dumps", "fuel_gauge.bin", NULL);
 		error = sd_save_to_file((u8 *)buf, 0x200, path);
@@ -150,20 +132,20 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 			error = 255;
 
 		emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
-		int res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
+		int res = sd_save_to_file((u8 *)IROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
 
-		u32 ipatch_backup[14];
-		memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
-		memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
+		u32 ipatch_cam[IPATCH_CAM_ENTRIES + 1];
+		memcpy(ipatch_cam, (void *)IPATCH_BASE, sizeof(ipatch_cam));
+		memset((void*)IPATCH_BASE, 0, sizeof(ipatch_cam)); // Zeroing valid entries is enough but zero everything.
 
 		emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
-		res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
+		res = sd_save_to_file((u8 *)IROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
 
-		memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
+		memcpy((void*)IPATCH_BASE, ipatch_cam, sizeof(ipatch_cam));
 
 		sd_unmount();
 	}
@@ -174,7 +156,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_T210B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
+	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
 
 	int error = !sd_mount();
 	if (!error)
@@ -194,7 +176,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
 		}
 
-		u32 words[FUSE_ARRAY_WORDS_NUM_T210B01];
+		u32 words[FUSE_ARRAY_WORDS_NUM_B01];
 		fuse_read_array(words);
 		if (!h_cfg.t210b01)
 			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
@@ -261,47 +243,23 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	sd_mount();
 
-	// Init eMMC.
-	if (!emmc_initialize(false))
+	// Dump CAL0.
+	int cal0_res = hos_dump_cal0();
+
+	// Check result. Don't error if hash doesn't match.
+	if (cal0_res == 1)
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
 		goto out;
 	}
-
-	// Generate BIS keys
-	hos_bis_keygen();
-
-	if (!cal0_buf)
-		cal0_buf = malloc(SZ_64K);
-
-	// Read and decrypt CAL0.
-	emmc_set_partition(EMMC_GPP);
-	LIST_INIT(gpt);
-	emmc_gpt_parse(&gpt);
-	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
-	nx_emmc_bis_init(cal0_part, false, 0);
-	nx_emmc_bis_read(0, 0x40, cal0_buf);
-	nx_emmc_bis_end();
-	emmc_gpt_free(&gpt);
-
-	// Clear BIS keys slots.
-	hos_bis_keys_clear();
-
-	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
-
-	// Check keys validity.
-	if (memcmp(&cal0->magic, "CAL0", 4))
+	else if (cal0_res == 2)
 	{
-		free(cal0_buf);
-		cal0_buf = NULL;
-
-		// Clear EKS keys.
-		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
-
 		lv_label_set_text(lb_desc, "#FFDD00 CAL0 is corrupt or wrong keys!#\n");
 		goto out;
 	}
+
+	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
 	u32 hash[8];
 	se_calc_sha256_oneshot(hash, (u8 *)cal0 + 0x40, cal0->body_size);
@@ -368,15 +326,22 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		break;
 	}
 
+	s_printf(txt_buf + strlen(txt_buf),
+		" (%06X)\n#FF8000 Touch Vendor:#      %d\n"
+		"#FF8000 IMU Type/Mount:#    %d / %d\n"
+		"#FF8000 Stick L/R Type:#    %02X / %02X\n",
+		cal0->lcd_vendor, cal0->touch_ic_vendor_id,
+		cal0->console_6axis_sensor_type, cal0->console_6axis_sensor_mount_type,
+		cal0->analog_stick_type_l, cal0->analog_stick_type_r);
+
 	bool valid_cal0 = !memcmp(hash, cal0->body_sha256, 0x20);
-	s_printf(txt_buf + strlen(txt_buf), " (%06X)\n#FF8000 SHA256 Hash Match:# %s", cal0->lcd_vendor, valid_cal0 ? "Pass" : "Failed");
+	s_printf(txt_buf + strlen(txt_buf), "#FF8000 SHA256 Hash Match:# %s", valid_cal0 ? "Pass" : "Failed");
 
 	lv_label_set_text(lb_desc, txt_buf);
 
 out:
 	free(txt_buf);
 	sd_unmount();
-	emmc_end();
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _cal0_dump_window_action);
 
@@ -407,7 +372,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"ODM Fields (4, 6, 7):\n"
 		"Secure Boot Key (SBK):\n"
 		"Device Key (DK):\n"
-		"Keygen Revision:\n"
+		"Public Key (PK SHA256):\n\n"
+		"HOS Keygen Revision:\n"
 		"USB Stack:\n"
 		"Final Test Revision:\n"
 		"Chip Probing Revision:\n"
@@ -423,7 +389,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"Vendor Code:\n"
 		"FAB Code:\n"
 		"LOT Code 0:\n"
-		"LOT Code 1:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
 		"Y Coordinate:\n"
@@ -440,7 +405,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	// Decode fuses.
 	char *sku;
-	char dram_man[32];
+	char dram_man[64];
 	char fuses_hos_version[64];
 	u8 dram_id = fuse_read_dramid(true);
 
@@ -475,11 +440,14 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
 			strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
 			break;
-		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
+		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WTC:
 			strcpy(dram_man, "Micron MT53B512M32D2NP-062 WT:C");
 			break;
 		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
 			strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
+			break;
+		case LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX:
+			strcpy(dram_man, "Samsung K4FBE3D4HM-MGXX 8GB");
 			break;
 		default:
 			strcpy(dram_man, "#FF8000 Unknown#");
@@ -519,10 +487,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
 			strcpy(dram_man, "Samsung K4UBE3D4AA-MGCL 8GB");
 			break;
-		case LPDDR4X_IOWA_4GB_SAMSUNG_1Z:
-		case LPDDR4X_HOAG_4GB_SAMSUNG_1Z:
-		case LPDDR4X_AULA_4GB_SAMSUNG_1Z:
-			strcpy(dram_man, "Samsung 1z B 4GB");
+		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+		case LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+			strcpy(dram_man, "Samsung K4U6E3S4AB-MGCL 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF:
@@ -530,21 +498,19 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcpy(dram_man, "Micron MT53E512M32D2NP-046 WT:F");
 			break;
 		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
-		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 		case LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
+		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
-
-		case LPDDR4X_UNK0_4GB_HYNIX_1A:
-		case LPDDR4X_UNK1_4GB_HYNIX_1A:
-		case LPDDR4X_UNK2_4GB_HYNIX_1A:
-			strcpy(dram_man, "Hynix 1a 4GB #FF8000 Contact me!#");
+		case LPDDR4X_IOWA_4GB_HYNIX_H54G46CYRBX267:
+		case LPDDR4X_HOAG_4GB_HYNIX_H54G46CYRBX267:
+		case LPDDR4X_AULA_4GB_HYNIX_H54G46CYRBX267:
+			strcpy(dram_man, "Hynix H54G46CYRBX267 4GB");
 			break;
-
-		case LPDDR4X_UNK0_4GB_MICRON_1A:
-		case LPDDR4X_UNK1_4GB_MICRON_1A:
-		case LPDDR4X_UNK2_4GB_MICRON_1A:
-			strcpy(dram_man, "Micron 1a 4GB #FF8000 Contact me!#");
+		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D1NP_046_WTB:
+		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D1NP_046_WTB:
+		case LPDDR4X_AULA_4GB_MICRON_MT53E512M32D1NP_046_WTB:
+			strcpy(dram_man, "Micron MT53E512M32D1NP-046 WT:B");
 			break;
 
 		default:
@@ -618,7 +584,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "15.0.0 - 15.0.1");
 		break;
 	case 18:
-		strcpy(fuses_hos_version, "16.0.0+");
+		strcpy(fuses_hos_version, "16.0.0 - 16.1.0");
+		break;
+	case 19:
+		strcpy(fuses_hos_version, "17.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
@@ -642,24 +611,31 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%d\n"
-		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
-		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
-		"ID: %02X, Major: A%02d, Minor: %d",
+		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
+		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d (%d)\n%d (%d)\n%d (%d)\n"
+		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n"
+		"ID: %02X, Major: %d, Minor: A%02d",
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
-		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)), fuse_read_odm_keygen_rev(),
+		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY0)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY1)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY2)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY3)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY4)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY5)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY6)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY7)),
+		fuse_read_odm_keygen_rev(),
 		((FUSE(FUSE_RESERVED_SW) & 0x80) || h_cfg.t210b01) ? "XUSB" : "USB2",
 		(FUSE(FUSE_OPT_FT_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_FT_REV) & 0x1F, FUSE(FUSE_OPT_FT_REV),
 		(FUSE(FUSE_OPT_CP_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_CP_REV) & 0x1F, FUSE(FUSE_OPT_CP_REV),
 		FUSE(FUSE_CPU_SPEEDO_0_CALIB), FUSE(FUSE_CPU_SPEEDO_1_CALIB), FUSE(FUSE_CPU_SPEEDO_2_CALIB),
 		FUSE(FUSE_SOC_SPEEDO_0_CALIB), FUSE(FUSE_SOC_SPEEDO_1_CALIB), FUSE(FUSE_SOC_SPEEDO_2_CALIB),
-		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
+		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_CPU_IDDQ_CALIB) * 4,
+		FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB) * 4,
+		FUSE(FUSE_GPU_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB) * 5,
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
+		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
 		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
 
 	lv_label_set_text(lb_val, txt_buf);
@@ -675,15 +651,15 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_recolor(lb_desc2, true);
 
 	// Prepare DRAM info.
-	emc_mr_data_t ram_vendor = sdram_read_mrx(MR5_MAN_ID);
-	emc_mr_data_t ram_rev0 = sdram_read_mrx(MR6_REV_ID1);
-	emc_mr_data_t ram_rev1 = sdram_read_mrx(MR7_REV_ID2);
+	emc_mr_data_t ram_vendor  = sdram_read_mrx(MR5_MAN_ID);
+	emc_mr_data_t ram_rev0    = sdram_read_mrx(MR6_REV_ID1);
+	emc_mr_data_t ram_rev1    = sdram_read_mrx(MR7_REV_ID2);
 	emc_mr_data_t ram_density = sdram_read_mrx(MR8_DENSITY);
-	u32 ranks = EMC(EMC_ADR_CFG) + 1;
+	u32 ranks    = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
-	u32 die_channels = ranks * ((channels & 1) + ((channels & 2) >> 1));
+	channels = (channels & 1) + ((channels & 2) >> 1);
 	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
-	switch (ram_vendor.rank0_ch0)
+	switch (ram_vendor.chip0.rank0_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -703,11 +679,23 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case 9:
 		strcat(txt_buf, "ESMT");
 		break;
+	case 19:
+		strcat(txt_buf, "CXMT");
+		break;
 	case 26:
-		strcat(txt_buf, "Xi'an UniIC Semiconductors Co., Ltd");
+		strcat(txt_buf, "Xi'an UniIC");
+		break;
+	case 27:
+		strcat(txt_buf, "ISSI");
 		break;
 	case 28:
 		strcat(txt_buf, "JSC");
+		break;
+	case 197:
+		strcat(txt_buf, "SINKER");
+		break;
+	case 229:
+		strcat(txt_buf, "Dosilicon");
 		break;
 	case 248:
 		strcat(txt_buf, "Fidelix");
@@ -723,11 +711,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch0);
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip0.rank0_ch0);
 		break;
 	}
 	strcat(txt_buf, " #FF8000 |# ");
-	switch (ram_vendor.rank0_ch1)
+	switch (ram_vendor.chip1.rank0_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -739,12 +727,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch1);
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip1.rank0_ch0);
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
-		ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1, die_channels);
-	switch ((ram_density.rank0_ch0 & 0x3C) >> 2)
+		ram_rev0.chip0.rank0_ch0, ram_rev1.chip0.rank0_ch0, ram_rev0.chip1.rank0_ch0, ram_rev1.chip1.rank0_ch0, ranks * channels);
+	switch ((ram_density.chip0.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -762,11 +750,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch0 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip0.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", die_channels);
-	switch ((ram_density.rank0_ch1 & 0x3C) >> 2)
+	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", ranks * channels);
+	switch ((ram_density.chip1.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -784,7 +772,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch1 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip1.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
 	strcat(txt_buf, "\n\n");
@@ -822,6 +810,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x98:
 			strcat(txt_buf, "-???");
 			break;
+		case 0x99:
+			strcat(txt_buf, "-???");
+			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
 			break;
@@ -841,13 +832,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "02");
 			break;
 		case 0x96:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		case 0x97:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		case 0x98:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
@@ -866,6 +857,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
+		break;
+	case PANEL_OEM_CLONE_5_5:
+		strcat(txt_buf, "#FFDD00 OEM Clone 5.5\"#");
+		break;
+	case PANEL_OEM_CLONE:
+		strcat(txt_buf, "#FFDD00 OEM Clone#");
 		break;
 	case 0xCCCC:
 		strcat(txt_buf, "#FFDD00 Failed to get info!#");
@@ -1002,7 +999,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 static char *ipatches_txt;
 static void _ipatch_process(u32 offset, u32 value)
 {
-	s_printf(ipatches_txt + strlen(ipatches_txt), "%6X     %4X    ", BOOTROM_BASE + offset, value);
+	s_printf(ipatches_txt + strlen(ipatches_txt), "%6X     %4X    ", IROM_BASE + offset, value);
 	u8 lo = value & 0xFF;
 	switch (value >> 8)
 	{
@@ -1584,13 +1581,15 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	char *txt_buf = (char *)malloc(SZ_16K);
 	txt_buf[0] = '\n';
 	txt_buf[1] = 0;
+	u16 *emmc_errors;
 
 	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
+		emmc_errors = emmc_get_error_count();
 
-		goto out;
+		goto out_error;
 	}
 
 	u32 speed = 0;
@@ -1625,7 +1624,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%d.%d\n%04X\n%02d/%04d\n\n",
 		emmc_storage.cid.manfid,
 		emmc_storage.cid.prod_name[0], emmc_storage.cid.prod_name[1], emmc_storage.cid.prod_name[2],
-		emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4],	emmc_storage.cid.prod_name[5],
+		emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4], emmc_storage.cid.prod_name[5],
 		emmc_storage.cid.prv & 0xF, emmc_storage.cid.prv >> 4,
 		emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);
 
@@ -1780,12 +1779,13 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 
-	u16 *emmc_errors = emmc_get_error_count();
+	emmc_errors = emmc_get_error_count();
 	if (emmc_get_mode() < EMMC_MMC_HS400  ||
 		emmc_errors[EMMC_ERROR_INIT_FAIL] ||
 		emmc_errors[EMMC_ERROR_RW_FAIL]   ||
 		emmc_errors[EMMC_ERROR_RW_RETRY])
 	{
+out_error:
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1816,7 +1816,6 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_obj_set_top(mbox, true);
 	}
 
-out:
 	emmc_end();
 	free(txt_buf);
 
@@ -2017,9 +2016,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"Bus Width:\n"
 		"Current Rate:\n"
 		"Speed Class:\n"
-		"UHS Grade:\n"
-		"Video Class:\n"
-		"App perf class:\n"
+		"UHS Classes:\n"
+		"Max Bus Speed:\n\n"
 		"Write Protect:"
 	);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
@@ -2053,14 +2051,32 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		uhs_au_size /= 1024;
 	}
 
+	sd_func_modes_t fmodes = { 0 };
+	sd_storage_get_fmodes(&sd_storage, NULL, &fmodes);
+
+	char *bus_speed;
+	if      (fmodes.cmd_system & SD_MODE_UHS_DDR200)
+		bus_speed = "DDR200";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR104)
+		bus_speed = "SDR104";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR50)
+		bus_speed = "SDR50";
+	else if (fmodes.access_mode & SD_MODE_UHS_DDR50)
+		bus_speed = "DDR50";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR25)
+		bus_speed = "SDR25";
+	else
+		bus_speed = "SDR12";
+
 	s_printf(txt_buf,
-		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d\nV%d\nA%d\n%s",
+		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d V%d A%d\n%s\n\n%s",
 		sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
 		sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
 		sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
 		(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
-		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)", sd_storage.ssr.uhs_grade,
-		sd_storage.ssr.video_class, sd_storage.ssr.app_class, wp_info);
+		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)",
+		sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class, sd_storage.ssr.app_class,
+		bus_speed, wp_info);
 
 	lv_label_set_text(lb_val2, txt_buf);
 
@@ -2137,7 +2153,9 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 	u16 *sd_errors = sd_get_error_count();
 	s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
-		sd_errors[0], nyx_str->info.sd_errors[0], sd_errors[1], nyx_str->info.sd_errors[1], sd_errors[2], nyx_str->info.sd_errors[2]);
+		sd_errors[SD_ERROR_INIT_FAIL], nyx_str->info.sd_errors[SD_ERROR_INIT_FAIL],
+		sd_errors[SD_ERROR_RW_FAIL],   nyx_str->info.sd_errors[SD_ERROR_RW_FAIL],
+		sd_errors[SD_ERROR_RW_RETRY],  nyx_str->info.sd_errors[SD_ERROR_RW_RETRY]);
 
 	lv_label_set_text(lb_val4, txt_buf);
 
@@ -2244,7 +2262,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\n#FF8000 Unknown OTP# (%02X)\n", main_pmic_version, value);
 
 	// CPU/GPU/DRAM Pmic IC info.
-	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) + 1 : 0;
+	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_B01) & 1) + 1 : 0;
 	switch (cpu_gpu_pmic_type)
 	{
 	case 0:

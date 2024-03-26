@@ -563,7 +563,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 				}
 				else
 				{
-					s_printf(gui->txt_buf, "#FF0000 Error creating partial.idx file!#\n");
+					s_printf(gui->txt_buf, "\n#FF0000 Error creating partial.idx file!#\n");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -778,6 +778,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	char sdPath[OUT_FILENAME_SZ];
 	// Create Restore folders, if they do not exist.
 	emmcsn_path_impl(sdPath, "/restore", "", &emmc_storage);
+	emmcsn_path_impl(sdPath, "/restore/emummc", "", &emmc_storage);
 	emmcsn_path_impl(sdPath, "/restore/partitions", "", &emmc_storage);
 
 	// Set folder to backup/{emmc_sn}.
@@ -999,7 +1000,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 			if ((u32)((u64)totalCheckFileSize >> (u64)9) > totalSectors)
 			{
-				s_printf(gui->txt_buf, "#FF8000 Size of SD Card split backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
+				s_printf(gui->txt_buf, "\n#FF8000 Size of SD Card split backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
@@ -1009,7 +1010,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			{
 				if (!gui->raw_emummc)
 				{
-					s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
+					s_printf(gui->txt_buf, "\n#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1027,7 +1028,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				// Restore folder is empty.
 				if (!numSplitParts)
 				{
-					s_printf(gui->txt_buf, "#FFDD00 Restore folder is empty.#\n\n");
+					s_printf(gui->txt_buf, "\n#FFDD00 Restore folder is empty.#\n\n");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1040,7 +1041,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 				if (check_4MB_aligned && (((u64)fno.fsize) % SZ_4M))
 				{
-					s_printf(gui->txt_buf, "#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#");
+					s_printf(gui->txt_buf, "\n#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1068,7 +1069,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			if (!(btn_wait() & BTN_POWER))
 			{
 				lv_obj_del(warn_mbox_bg);
-				s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match#\n#FF0000 eMMC's selected part size!#\n");
+				s_printf(gui->txt_buf, "\n#FF0000 Size of SD Card split backup does not match#\n#FF0000 eMMC's selected part size!#\n");
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
@@ -1123,7 +1124,7 @@ multipart_not_allowed:
 	{
 		if (((u32)((u64)f_size(&fp) >> (u64)9)) > totalSectors)
 		{
-			s_printf(gui->txt_buf, "#FF8000 Size of SD Card backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
+			s_printf(gui->txt_buf, "\n#FF8000 Size of SD Card backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -1431,8 +1432,10 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 	int i = 0;
 	char sdPath[OUT_FILENAME_SZ];
-
-	emmcsn_path_impl(sdPath, "/restore", "", &emmc_storage);
+	if (!gui->raw_emummc)
+		emmcsn_path_impl(sdPath, "/restore", "", &emmc_storage);
+	else
+		emmcsn_path_impl(sdPath, "/restore/emummc", "", &emmc_storage);
 	gui->base_path = (char *)malloc(strlen(sdPath) + 1);
 	strcpy(gui->base_path, sdPath);
 
@@ -1464,7 +1467,10 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 			emmc_set_partition(i + 1);
 
-			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &emmc_storage);
+			if (!gui->raw_emummc)
+				emmcsn_path_impl(sdPath, "/restore", bootPart.name, &emmc_storage);
+			else
+				emmcsn_path_impl(sdPath, "/restore/emummc", bootPart.name, &emmc_storage);
 			res = _restore_emmc_part(gui, sdPath, i, &emmc_storage, &bootPart, false);
 
 			if (!res)
@@ -1530,7 +1536,10 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 			manual_system_maintenance(true);
 			i++;
 
-			emmcsn_path_impl(sdPath, "/restore", rawPart.name, &emmc_storage);
+			if (!gui->raw_emummc)
+				emmcsn_path_impl(sdPath, "/restore", rawPart.name, &emmc_storage);
+			else
+				emmcsn_path_impl(sdPath, "/restore/emummc", rawPart.name, &emmc_storage);
 			res = _restore_emmc_part(gui, sdPath, 2, &emmc_storage, &rawPart, true);
 
 			if (!res)

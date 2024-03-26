@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -65,7 +65,9 @@ char *text_color;
 typedef struct _jc_lv_driver_t
 {
 	lv_indev_t *indev;
-	bool centering_done;
+// LV_INDEV_READ_PERIOD * JC_CAL_MAX_STEPS = 264 ms.
+#define JC_CAL_MAX_STEPS 8
+	u32 calibration_step;
 	u16 cx_max;
 	u16 cx_min;
 	u16 cy_max;
@@ -352,14 +354,14 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	if (console_enabled)
 	{
 		// Print input debugging in console.
-		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-		gfx_con_setpos(32, 638);
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+		gfx_con_setpos(32, 638, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
 		gfx_printf("x: %4d, y: %4d | z: %3d | ", touchpad.x, touchpad.y, touchpad.z);
-		gfx_printf("1: %02x, 2: %02x, 3: %02x, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
-		gfx_printf("4: %02X, 5: %02x, 6: %02x, 7: %02x",
+		gfx_printf("1: %02X, 2: %02X, 3: %02X, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
+		gfx_printf("4: %02X, 5: %02X, 6: %02X, 7: %02X",
 			touchpad.raw[4], touchpad.raw[5], touchpad.raw[6], touchpad.raw[7]);
-		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
 		return false;
@@ -412,7 +414,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	}
 
 	// Calibrate left stick.
-	if (!jc_drv_ctx.centering_done)
+	if (jc_drv_ctx.calibration_step != JC_CAL_MAX_STEPS)
 	{
 		if (n_cfg.jc_force_right)
 		{
@@ -420,11 +422,11 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 				&& jc_pad->rstick_x > 0x400 && jc_pad->rstick_y > 0x400
 				&& jc_pad->rstick_x < 0xC00 && jc_pad->rstick_y < 0xC00)
 			{
+				jc_drv_ctx.calibration_step++;
 				jc_drv_ctx.cx_max = jc_pad->rstick_x + 0x96;
 				jc_drv_ctx.cx_min = jc_pad->rstick_x - 0x96;
 				jc_drv_ctx.cy_max = jc_pad->rstick_y + 0x96;
 				jc_drv_ctx.cy_min = jc_pad->rstick_y - 0x96;
-				jc_drv_ctx.centering_done = true;
 				jc_drv_ctx.cursor_timeout = 0;
 			}
 		}
@@ -432,14 +434,15 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			     && jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
 			     && jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
 		{
+			jc_drv_ctx.calibration_step++;
 			jc_drv_ctx.cx_max = jc_pad->lstick_x + 0x96;
 			jc_drv_ctx.cx_min = jc_pad->lstick_x - 0x96;
 			jc_drv_ctx.cy_max = jc_pad->lstick_y + 0x96;
 			jc_drv_ctx.cy_min = jc_pad->lstick_y - 0x96;
-			jc_drv_ctx.centering_done = true;
 			jc_drv_ctx.cursor_timeout = 0;
 		}
-		else
+
+		if (jc_drv_ctx.calibration_step != JC_CAL_MAX_STEPS)
 		{
 			data->state = LV_INDEV_STATE_REL;
 			return false;
@@ -447,13 +450,10 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	}
 
 	// Re-calibrate on disconnection.
-	if (n_cfg.jc_force_right)
-	{
-		if (!jc_pad->conn_r)
-			jc_drv_ctx.centering_done = 0;
-	}
-	else if (!jc_pad->conn_l)
-		jc_drv_ctx.centering_done = 0;
+	if (n_cfg.jc_force_right && !jc_pad->conn_r)
+		jc_drv_ctx.calibration_step = 0;
+	else if (!n_cfg.jc_force_right && !jc_pad->conn_l)
+		jc_drv_ctx.calibration_step = 0;
 
 	// Set button presses.
 	if (jc_pad->a || jc_pad->zl || jc_pad->zr)
@@ -470,10 +470,10 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			{
 				display_activate_console();
 				console_enabled = true;
-				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-				gfx_con_setpos(964, 630);
+				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+				gfx_con_setpos(964, 630, GFX_COL_AUTO);
 				gfx_printf("Press -/+ to close");
-				gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+				gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 			}
 			else
 			{
@@ -491,14 +491,14 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	if (console_enabled)
 	{
 		// Print input debugging in console.
-		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-		gfx_con_setpos(32, 630);
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+		gfx_con_setpos(32, 630, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
-		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03x, cy: %03X - %03x",
+		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03X, cy: %03X - %03X",
 			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->buttons,
 			jc_pad->batt_info_l, jc_pad->batt_info_r,
 			jc_drv_ctx.cx_min, jc_drv_ctx.cx_max, jc_drv_ctx.cy_min, jc_drv_ctx.cy_max);
-		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
 		data->state = LV_INDEV_STATE_REL;
@@ -1240,9 +1240,9 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_label_set_recolor(lbl_credits, true);
 	lv_label_set_static_text(lbl_credits,
 		"#C7EA46 hekate#  (c) 2018,      #C7EA46 naehrwert#, #C7EA46 st4rk#\n"
-		"        (c) 2018-2022, #C7EA46 CTCaer#\n"
+		"        (c) 2018-2023, #C7EA46 CTCaer#\n"
 		"\n"
-		"#C7EA46 Nyx GUI# (c) 2019-2022, #C7EA46 CTCaer#\n"
+		"#C7EA46 Nyx GUI# (c) 2019-2023, #C7EA46 CTCaer#\n"
 		"\n"
 		"Thanks to: #00CCFF derrek, nedwill, plutoo, #\n"
 		"           #00CCFF shuffle2, smea, thexyz, yellows8 #\n"
@@ -1330,11 +1330,13 @@ static void _update_status_bar(void *params)
 	max17050_get_property(MAX17050_VCELL, &batt_volt);
 	max17050_get_property(MAX17050_Current, &batt_curr);
 
-	// Enable fan if more than 46 oC.
+	// Enable fan if more than 41 oC.
 	u32 soc_temp_dec = (soc_temp >> 8);
 	if (soc_temp_dec > 51)
 		set_fan_duty(102);
 	else if (soc_temp_dec > 46)
+		set_fan_duty(76);
+	else if (soc_temp_dec > 41)
 		set_fan_duty(51);
 	else if (soc_temp_dec < 40)
 		set_fan_duty(0);
@@ -2073,7 +2075,10 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	int res = !create_config_entry();
+	int res = 0;
+
+	if (sd_mount())
+		res = !create_config_entry();
 
 	if (res)
 		lv_mbox_set_text(mbox, "#FF8000 hekate Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
@@ -2083,6 +2088,8 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	lv_obj_set_top(mbox, true);
 
 	nyx_options_clear_ini_changes_made();
+
+	sd_unmount();
 
 	return LV_RES_OK;
 }
