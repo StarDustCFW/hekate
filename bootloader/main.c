@@ -776,7 +776,7 @@ static void _check_for_updated_bootloader()
         */
 	}
 }
-
+/*
 static void _auto_launch()
 {
 	struct _bmp_data
@@ -1074,7 +1074,7 @@ out:
 
 	_nyx_load_run();
 }
-
+*/
 #define EXCP_EN_ADDR   0x4003FFFC
 #define  EXCP_MAGIC       0x30505645 // "EVP0".
 #define EXCP_TYPE_ADDR 0x4003FFF8
@@ -1093,7 +1093,7 @@ typedef struct _pstore_buf {
 	u32 start;
 	u32 size;
 } pstore_buf_t;
-
+/*
 static void _show_errors()
 {
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
@@ -1214,7 +1214,7 @@ static void _show_errors()
 		msleep(500);  // Guard against force menu VOL-.
 	}
 }
-
+*/
 static void _check_low_battery()
 {
 	if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
@@ -1372,7 +1372,7 @@ static void _r2p_get_config_t210b01()
 		break;
 	}
 }
-
+/*
 static void _ipl_reload()
 {
 	hw_reinit_workaround(false, 0);
@@ -1482,7 +1482,7 @@ ment_t ment_top[] = {
 };
 
 menu_t menu_top = { ment_top, "hekate v6.1.0", 0, 0 };
-
+*/
 extern void pivot_stack(u32 stack_top);
 
 #include "menu/Land.h"
@@ -1584,7 +1584,7 @@ skip_lp0_minerva_config:
     //anothermain();
     takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
-	_show_errors();
+	//_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
 //	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
@@ -1595,10 +1595,10 @@ skip_lp0_minerva_config:
 
 	// Set ram to a freq that doesn't need periodic training.
 	minerva_change_freq(FREQ_800);
-
+/*
 	while (true)
 		tui_do_menu(&menu_top);
-
+*/
 	// Halt BPMP if we managed to get out of execution.
 	while (true)
 		bpmp_halt();
