@@ -394,7 +394,7 @@ char *listfol(const char *directory, const char *pattern, bool includeHiddenFile
 	u8 max_entries = 61;
 
 	int res = 0;
-	u32 i = 0, j = 0, k = 0;
+	int i = 0, j = 0, k = 0;
 	DIR dir;
 	static FILINFO fno;
 	
@@ -486,7 +486,7 @@ char *listfil(const char *directory, const char *pattern, bool includeHiddenFile
 	u8 max_entries = 61;
 
 	int res = 0;
-	u32 i = 0, j = 0, k = 0;
+	int i = 0, j = 0, k = 0;
 	DIR dir;
 	static FILINFO fno;
 	

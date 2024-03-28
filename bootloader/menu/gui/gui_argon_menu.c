@@ -18,7 +18,6 @@
 #include <string.h>
 #include "gui_argon_menu.h"
 #include "gui_menu.h"
-#include "gui_menu_pool.h"
 #include "custom-gui.h"
 #include "display/di.h"
 #include "../../gfx/gfx.h"
@@ -29,7 +28,6 @@
 #include "utils/util.h"
 #include "../tools/touch2.h"
 #include "utils/btn.h"
-#include "../core/launcher.h"
 #include "custom-gui.h"
 #include "mem/heap.h"
 //#include "minerva/minerva.h"
@@ -53,7 +51,7 @@ char *buffer_blk;
 void int_menus();
 //menus
 u64 main_menu = 0;
-const char* imagemenus = "background.bmp";
+char* imagemenus = "background.bmp";
 
 //low icons Y
 u64 low_icons = 645;
@@ -84,7 +82,6 @@ void gui_init_argon_boot(void)
 		iamsafe = 1;
 	}
 	
-	gui_menu_pool_init();
 	gui_menu_t *menu = gui_menu_create("ArgonNX", imagemenus);
 	change_brightness(0);
 
@@ -150,8 +147,6 @@ void gui_init_argon_boot(void)
 
 	if (btn_read() & BTN_VOL_DOWN)
 		f_unlink("StarDust/autobootecho.txt");
-    int_menus();
-	pre_load_menus(0, 1);
 	gui_init_argon_menu();
 }
 
@@ -159,16 +154,19 @@ gui_menu_t *menu;
 gui_menu_t *menu_0;
 gui_menu_t *menu_1;
 gui_menu_t *menu_2;
+/*
 gui_menu_t *menu_3;
 gui_menu_t *menu_4;
 gui_menu_t *menu_5;
 
+*/
+
 void int_menus(){
     menu_0 = gui_menu_create("ArgonNX", "background.bmp");
     menu_1 = gui_menu_create("ArgonNX", "back-set.bmp");
-    menu_3 = gui_menu_create("ArgonNX", "back-mem.bmp");
-    menu_4 = gui_menu_create("ArgonNX", "back-inc.bmp");
-    menu_5 = gui_menu_create("ArgonNX", "back-exp.bmp");
+    menu_2 = gui_menu_create("ArgonNX", "back-inc.bmp");
+//    menu_3 = gui_menu_create("ArgonNX", "back-mem.bmp");
+//    menu_5 = gui_menu_create("ArgonNX", "back-exp.bmp");
 }
 
 void pre_load_menus(int menus, bool StarUp)
@@ -286,13 +284,13 @@ void pre_load_menus(int menus, bool StarUp)
 		//			gui_menu_append_entry(menu_0,gui_create_menu_entry("",theme("Icons/Reinx-off.bmp"),366, main_iconY, 300 , 300, NULL, NULL));
 		//call menu 1
 		create(menu_0, "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
-		menu = menu_0;
+        static_menu_elements(menu_0);
 	}
 
 	if (menus == 1 || StarUp)
 	{
 		static int start_point = 0;
-		if (menu_1 == NULL || StarUp)
+		if (menu_1->next_entry == 0 || StarUp)
 		{
 			//list custom skins
 			AThemes_list(menu_1, 80, 90);
@@ -323,8 +321,10 @@ void pre_load_menus(int menus, bool StarUp)
                     create(menu_1, "Icons/link_hide.bmp", 580, 600, (int (*)(void *))tool_emu, (void *)99);
             
             */
-
-			//call menu 5 create(menu_1, "Icons/HB.bmp", 790, 600, (int (*)(void *))tool_Menus, (void *)5);
+            static_menu_elements(menu_1);
+			//draw power
+			create(menu_1, "Icons/power.bmp", 80, 500, tool_power_off, NULL);
+            create(menu_1, "Icons/home.bmp", 10, low_icons, (int (*)(void *))tool_Menus, (void *)0);
 
 			start_point = menu_1->next_entry;
 		}
@@ -333,8 +333,6 @@ void pre_load_menus(int menus, bool StarUp)
 			menu_1->next_entry = start_point + 1;
 		}
 
-			//draw power
-			create(menu_1, "Icons/power.bmp", 80, 500, tool_power_off, NULL);
 
 		//dinamic
 		/*
@@ -433,15 +431,7 @@ void pre_load_menus(int menus, bool StarUp)
 		menu = menu_1;
 	}
 
-	if (menus == 3)
-	{
-		//Menu Here
-		//call
-		create(menu_3, "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
-		menu = menu_3;
-	}
-
-	if (menus == 4)
+	if (menus == 2)
 	{
 
 		//		incognito togle
@@ -459,7 +449,7 @@ void pre_load_menus(int menus, bool StarUp)
 		u32 rowsepar = 50;
 		u32 colsepar = 100;
 
-		if (sd_mount())
+		//if (sd_mount())
 		{
 			if (sd_file_exists("atmosphere/config/exosphere.ini"))
 			{
@@ -496,44 +486,44 @@ void pre_load_menus(int menus, bool StarUp)
 				{
 					if (emu_blk == 1)
 					{
-						create(menu_4, "Icons/sw-on.bmp", 1000, 100, (int (*)(void *))Incognito, (void *)"DBE");
+						create(menu_2, "Icons/sw-on.bmp", 1000, 100, (int (*)(void *))Incognito, (void *)"DBE");
 					}
 					else
 					{
-						create(menu_4, "Icons/sw-off.bmp", 1000, 100, (int (*)(void *))Incognito, (void *)"BE");
+						create(menu_2, "Icons/sw-off.bmp", 1000, 100, (int (*)(void *))Incognito, (void *)"BE");
 					}
-					gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("Blank_Prodinfo", 1020, 90, 150, 100, NULL, NULL));
+					gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("Blank_Prodinfo", 1020, 90, 150, 100, NULL, NULL));
 				}
 
-				gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("SysNand", 170, 200, 150, 100, NULL, NULL));
-				gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("EmuNand", 970, 200, 150, 100, NULL, NULL));
+				gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("SysNand", 170, 200, 150, 100, NULL, NULL));
+				gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("EmuNand", 970, 200, 150, 100, NULL, NULL));
 
 				rowinc = rowinc - rowsepar;
 				colinc = colinc + colsepar;
-				gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap(emuserial, rowinc + 30, colinc - 20, 150, 100, NULL, NULL));
+				gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap(emuserial, rowinc + 30, colinc - 20, 150, 100, NULL, NULL));
 				if (!sd_file_exists("prodinfo_emunand.bin"))
-					create(menu_4, "Icons/inc3.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"2");
+					create(menu_2, "Icons/inc3.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"2");
 				else
-					create(menu_4, "Icons/inc0-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc0-off.bmp", rowinc, colinc, NULL, NULL);
 
 				rowinc = rowinc - rowsepar;
 				colinc = colinc + colsepar;
 				if (emu_inc == 0)
-					create(menu_4, "Icons/inc4.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"3");
+					create(menu_2, "Icons/inc4.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"3");
 				else
-					create(menu_4, "Icons/inc1-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc1-off.bmp", rowinc, colinc, NULL, NULL);
 
 				rowinc = rowinc - rowsepar;
 				colinc = colinc + colsepar;
 				if (sd_file_exists("prodinfo_emunand.bin"))
-					create(menu_4, "Icons/inc5.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"4");
+					create(menu_2, "Icons/inc5.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"4");
 				else
 				{
-					create(menu_4, "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
 					if (emu_inc == 1)
 					{
-						gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
-						gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("/prodinfo_emunand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
+						gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
+						gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("/prodinfo_emunand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
 					}
 				}
 			}
@@ -576,225 +566,127 @@ void pre_load_menus(int menus, bool StarUp)
 				{
 					if (sys_blk == 1)
 					{
-						create(menu_4, "Icons/sw-on.bmp", rowinc - 8 - rowsepar, 100, (int (*)(void *))Incognito, (void *)"DBS");
+						create(menu_2, "Icons/sw-on.bmp", rowinc - 8 - rowsepar, 100, (int (*)(void *))Incognito, (void *)"DBS");
 					}
 					else
 					{
-						create(menu_4, "Icons/sw-off.bmp", rowinc - 8 - rowsepar, 100, (int (*)(void *))Incognito, (void *)"BS");
+						create(menu_2, "Icons/sw-off.bmp", rowinc - 8 - rowsepar, 100, (int (*)(void *))Incognito, (void *)"BS");
 					}
-					gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("Blank_Prodinfo", rowinc + 10 - rowsepar, 90, 150, 100, NULL, NULL));
+					gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("Blank_Prodinfo", rowinc + 10 - rowsepar, 90, 150, 100, NULL, NULL));
 				}
-				gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap(sysserial, rowinc + 40, colinc - 20, 150, 100, NULL, NULL));
+				gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap(sysserial, rowinc + 40, colinc - 20, 150, 100, NULL, NULL));
 				if (!sd_file_exists("prodinfo_sysnand.bin"))
-					create(menu_4, "Icons/inc0.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"5");
+					create(menu_2, "Icons/inc0.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"5");
 				else
-					create(menu_4, "Icons/inc0-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc0-off.bmp", rowinc, colinc, NULL, NULL);
 
 				rowinc = rowinc + rowsepar;
 				colinc = colinc + colsepar;
 				if (sys_inc == 0)
-					create(menu_4, "Icons/inc1.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"6");
+					create(menu_2, "Icons/inc1.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"6");
 				else
-					create(menu_4, "Icons/inc1-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc1-off.bmp", rowinc, colinc, NULL, NULL);
 
 				rowinc = rowinc + rowsepar;
 				colinc = colinc + colsepar;
 
 				if (sd_file_exists("prodinfo_sysnand.bin"))
-					create(menu_4, "Icons/inc2.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"7");
+					create(menu_2, "Icons/inc2.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"7");
 				else
 				{
-					create(menu_4, "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
+					create(menu_2, "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
 					if (sys_inc == 1)
 					{
-						gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
-						gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("/prodinfo_sysnand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
+						gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
+						gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("/prodinfo_sysnand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
 					}
 				}
 			}
 			else
 			{
-				gui_menu_append_entry(menu_4, gui_create_menu_entry_no_bitmap("Biskeys error, try again", rowinc + 30, colinc - 10, 150, 100, NULL, NULL));
+				gui_menu_append_entry(menu_2, gui_create_menu_entry_no_bitmap("Biskeys error, try again", rowinc + 30, colinc - 10, 150, 100, NULL, NULL));
 			}
 
-			//		gui_menu_append_entry(menu_4,gui_create_menu_entry("",theme("Icons/arrowl.bmp"),200, low_icons, 70, 70,(int (*)(void *))tool_Menus, (void*)1));
+			//		gui_menu_append_entry(menu_2,gui_create_menu_entry("",theme("Icons/arrowl.bmp"),200, low_icons, 70, 70,(int (*)(void *))tool_Menus, (void*)1));
 		}
+        static_menu_elements(menu_2);
+        create(menu_2, "Icons/home.bmp", 10, low_icons, (int (*)(void *))tool_Menus, (void *)0);
 
-		menu = menu_4;
-	}
-
-	if (menus == 5)//disabled
-	{
-/*
-		//List Files And folders
-		char *HBpath = "/switch";
-		char *folder = listfol(HBpath, "*", true);
-		u32 r = 0;
-		u32 i = 0;
-		u32 f = 0;
-		u32 y = 60;
-		u32 x = 150;
-		u32 space = 80;
-
-		//display folder
-		gui_menu_append_entry(menu_5, gui_create_menu_entry_no_bitmap(HBpath, strlen(HBpath) * 8 - 40 + 150, 30, 5, 5, NULL, NULL));
-		gui_menu_append_entry(menu_5, gui_create_menu_entry_no_bitmap("Homebrew", strlen(HBpath) * 8 - 40 + 150, 50, 5, 5, NULL, NULL));
-		gui_menu_append_entry(menu_5, gui_create_menu_entry_no_bitmap("Homebrew      Toogle.", strlen(HBpath) * 8 - 40 + 890, 690, 5, 5, NULL, NULL));
-
-		while (folder[r * 256])
-		{
-			if (f >= 33)
-			{
-				gui_menu_append_entry(menu_5, gui_create_menu_entry_no_bitmap("More...", 1100, 690, 150, 100, NULL, NULL));
-				break;
-			}
-			if (strlen(&folder[r * 256]) <= 100)
-			{
-				char folname[20];
-				char *str = &folder[r * 256];
-				int h;
-				for (h = 0; h < 19; h++)
-					folname[h] = str[h];
-				folname[h] = '\0';
-				if ((strstr(folname, ".overlays") == NULL) & (strstr(folname, "XXX") == NULL))
-				{
-					char *source_fol = (char *)malloc(256);
-					char *source_folder = (char *)malloc(256);
-					strcpy(source_fol, "/switch");
-					strcat(source_fol, "/");
-					strcat(source_fol, folname);
-					strcpy(source_folder, source_fol);
-					strcat(source_fol, "/hide.flag");
-					if (sd_file_exists(source_fol))
-					{
-						f_chmod(source_folder, AM_ARC, AM_ARC);
-						create(menu_5, "Icons/sw-off.bmp", x, y + 30, (int (*)(void *))HBhide, (void *)source_fol);
-					}
-					else
-					{
-						f_chmod(source_folder, AM_RDO, AM_RDO | AM_ARC);
-						create(menu_5, "Icons/sw-on.bmp", x, y + 30, (int (*)(void *))HBhide, (void *)source_fol);
-					}
-					//					gui_menu_append_entry(menu_5,gui_create_menu_entry_no_bitmap(folname, x+strlen(folname)*8-80, y+25, 150, 0, NULL, NULL));
-					gui_menu_append_entry(menu_5, gui_create_menu_entry_no_bitmap(folname, x + 25, y + 25, 150, 0, NULL, NULL));
-					y = y + space;
-				}
-
-				f++;
-				i++;
-				if ((i == 8) || (i == 15))
-				{
-					y = 60;
-					if (i == 15)
-					{
-						i = 0;
-						x = 940;
-					}
-					else
-						x = 545;
-				}
-			}
-			r++;
-		}
-*/
-		//call menu 1
-		create(menu_5, "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
-		menu = menu_5;
 	}
 }
 
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
-	//	change_brightness(1);
-	//	menu = gui_menu_create("ArgonNX",main_menu);
-	//main menu 0-------------------------------------
-	/* Init pool for menu */
-	gui_menu_pool_init();
- while(true){
-	SDStrap();
-	switch (main_menu)
-	{
-	case 0:
-	default:
-	{
-		if (menu_0 == NULL)
-			pre_load_menus(main_menu, 0);
-		if (menu_0 == menu)
-			break;
-		menu = menu_0;
-	}
-	break;
+    //I+init Menus
+    int_menus();
+	pre_load_menus(0, 1);
+    menu = menu_0;
 
-	case 1:
-	{
-		if (menu_1 == NULL)
-			pre_load_menus(main_menu, 0);
-		if (menu_1 == menu)
-			break;
-		menu = menu_1;
-	}
-	break;
+	//main menu loop
+    while(true){
+        SDStrap();
+        switch (main_menu)
+        {
+            case 0:
+            default:
+            {
+                if (menu_0->next_entry == 0)
+                    pre_load_menus(main_menu, 0);
+                if (menu_0 == menu)
+                    break;
+                menu = menu_0;
+            }
+            break;
 
-	case 3:
-	{
-		if (menu_3 == NULL)
-			pre_load_menus(main_menu, 0);
-		if (menu_3 == menu)
-			break;
-		menu = menu_3;
-	}
-	break;
+            case 1:
+            {
+                if (menu_1->next_entry == 0)
+                    pre_load_menus(main_menu, 0);
+                if (menu_1 == menu)
+                    break;
+                menu = menu_1;
+            }
+            break;
 
-	case 4:
-	{
-		if (menu_4 == NULL)
-			pre_load_menus(main_menu, 0);
-		if (menu_4 == menu)
-			break;
-		menu = menu_4;
-	}
-	break;
+            case 2:
+            {
+                if (menu_2->next_entry == 0)
+                    pre_load_menus(main_menu, 0);
+                if (menu_2 == menu)
+                    break;
+                menu = menu_2;
+            }
+            break;
+        }
+        //gui_menu_push_to_pool((void*)menu);
 
-	case 5:
-	{
-		if (menu_5 == NULL)
-			pre_load_menus(main_menu, 0);
-		if (menu_5 == menu)
-			break;
-		menu = menu_5;
-	}
-	break;
-	}
-    gui_menu_push_to_pool((void*)menu);
-
-	static_menu_elements(menu);
-	/* Start menu_1 */
-	change_brightness(0);
-    
-	gui_menu_open(menu);
-    /*
-    gfx_con_setpos( 160, 50);
-    gfx_printf( "end off menu \n");
-*/
- }
+        //static_menu_elements(menu);
+        /* Start menu_1 */
+        change_brightness(0);
+        
+        gui_menu_open(menu);
+        /*
+        gfx_con_setpos( 160, 50);
+        gfx_printf( "end off menu \n");
+    */
+    }
 	/* Clear all entries and menus */
-	gui_menu_pool_cleanup();
+	//gui_menu_pool_cleanup();
     return;
 }
 
 int static_menu_elements(gui_menu_t *menu)
 {
-	if (main_menu != 0)
-		create(menu, "Icons/home.bmp", 10, low_icons, (int (*)(void *))tool_Menus, (void *)0);
 		//create(menu, "/StarDust/skins/xbox/Icons/home.bmp", 10, low_icons, (int (*)(void *))tool_Menus, (void *)0);
 /*
 	if (main_menu != 1)
 		create(menu, "Icons/power.bmp", 605, low_icons, tool_power_off, NULL);
 
 */
-	
-	gui_menu_append_entry(menu, gui_create_menu_entry("", sd_4_file_read2(""), 0, 0, 35, 35, (int (*)(void *))screenshot, NULL));
+		
+
+	gui_menu_append_entry(menu, gui_create_menu_entry("", NULL, 0, 0, 35, 35, (int (*)(void *))screenshot, NULL));
 
 	//battery
 	u32 battPercent = 0;
@@ -823,7 +715,6 @@ int tool_reboot_rcm(void *param)
 
 int tool_power_off(void *param)
 {
-	gui_menu_pool_cleanup();
 	power_set_state(POWER_OFF);
 	return 0;
 }
@@ -832,7 +723,7 @@ int tool_power_off(void *param)
 int tool_extr_rSD(void *param)
 {
 	SDStrap();
-	gui_menu_pool_cleanup();
+	//gui_menu_pool_cleanup();
 	gfx_swap_buffer();
     gfx_clear_grey(0x00);
 	change_brightness(0);
@@ -998,8 +889,7 @@ int tool_emu(u32 status)
 		pre_load_menus(0, 0);
 	}
 
-	haschange = true;//gui_init_argon_menu();
-	return 0;
+	return 1;
 }
 
 int tool_Menus(u32 param)
@@ -1008,12 +898,10 @@ int tool_Menus(u32 param)
 	//set menu number
 	main_menu = param;
 	//gui_menu_pool_cleanup();
-    haschange = true;
-	//gui_init_argon_menu();
-	return 0;
+	return 1;
 }
 
-void tool_servises_on(char *title)
+int tool_servises_on(char *title)
 {
 	SDStrap();
 	change_brightness(1);
@@ -1037,11 +925,10 @@ void tool_servises_on(char *title)
 		sd_save_2_file("", 0, path);
 	}
 	pre_load_menus(1, 0);
-    haschange = true;
-	//gui_init_argon_menu();
+    return 1;
 }
 
-void tool_servises_off(char *title)
+int tool_servises_off(char *title)
 {
 	SDStrap();
 	change_brightness(1);
@@ -1061,12 +948,11 @@ void tool_servises_off(char *title)
 		f_unlink(path);
 	}
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
+    return 1;
 }
 
 //Themes ON
-void tool_Themes_on(char *cfw)
+int tool_Themes_on(char *cfw)
 {
 	SDStrap();
 	char *path = (char *)malloc(256);
@@ -1093,12 +979,11 @@ void tool_Themes_on(char *cfw)
 		sd_save_2_file("", 0, "atmosphere/contents/0100000000001000/fsmitm.flag");
 	}
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
+    return 1;
 }
 
 //Themes OFF
-void tool_Themes_off(char *cfw)
+int tool_Themes_off(char *cfw)
 {
 	SDStrap();
 	if (strstr(cfw, "sxos") != NULL)
@@ -1122,8 +1007,7 @@ void tool_Themes_off(char *cfw)
 		f_unlink("atmosphere/contents/0100000000001000/fsmitm.flag");
 	}
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
+    return 1;
 }
 
 //safe boot
@@ -1190,11 +1074,9 @@ int tool_theme(char *param)
 	SDStrap();
 	change_brightness(1);
 	saveTheme(param);
-    haschange = true;
     int_menus();
 	pre_load_menus(1, 1);
-	//	gui_init_argon_menu();
-	return 0;
+	return 1;
 }
 
 int bat_show(u32 percent)
@@ -1209,14 +1091,13 @@ int bat_show(u32 percent)
 	return 0;
 }
 
-void serv_CFW(int cfw)
+int serv_CFW(int cfw)
 {
 	SDStrap();
 	change_brightness(1);
 	isAMS = cfw;
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
+    return 1;
 }
 
 void serv_display(gui_menu_t *menu, char *titleid, char *name)
@@ -1306,9 +1187,7 @@ int Incognito(char *order){
 		u32 size = strlen(buffer_blk) - 1;
 		sd_save_2_file(buffer_blk, size, "atmosphere/config/exosphere.ini");
 		pre_load_menus(4, 0);
-        haschange = true;
-        //		gui_init_argon_menu();
-		return 0;
+		return 1;
 	}
 
 	sd_save_2_file(order, 1, "StarDust/autoboot.inc");
@@ -1325,9 +1204,7 @@ int Autoboot(u32 fil){
 		sd_save_2_file("", 0, "StarDust/autobootecho.txt");
 	
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
-	return 0;
+	return 1;
 };
 
 int AThemes_list(gui_menu_t *menu, u32 gridX, u32 gridY){
@@ -1362,7 +1239,7 @@ int AThemes_list(gui_menu_t *menu, u32 gridX, u32 gridY){
 	return 0;
 }
 
-void medislay(char *flags){
+int medislay(char *flags){
 	SDStrap();
 	change_brightness(0);
 	if (sd_file_exists("StarDust/flags/b50.flag"))
@@ -1370,8 +1247,7 @@ void medislay(char *flags){
 	else
 		sd_save_2_file("", 0, "StarDust/flags/b50.flag");
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
+    return 1;
 }
 /**/
 
@@ -1407,9 +1283,7 @@ int uLaunch(u32 fil)
 	}
 	printerCU("", "", 1); //flush print
 	pre_load_menus(1, 0);
-    haschange = true;
-	//	gui_init_argon_menu();
-	return 0;
+	return 1;
 }
 
 void hekateOFW(u32 tipo) {

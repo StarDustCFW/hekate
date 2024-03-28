@@ -13,11 +13,11 @@
 #include "../../gfx/gfx.h"
 #include "mem/heap.h"
 #include <string.h>
-#include "../core/launcher.h"
 #include "../gui/custom-gui.h"
 #include "power/max17050.h"
 #include "../tools/tools.h"
 #define REVI_VERSION LOAD_BUILD_VER
+extern void llaunch_payload(char *path);
 
 __attribute__((noreturn)) void wait_for_button_and_reboot(void) {
     u32 button;
@@ -27,6 +27,12 @@ __attribute__((noreturn)) void wait_for_button_and_reboot(void) {
             power_set_state(REBOOT_RCM);
         }
     }
+}
+
+int launch_payload(char *path)
+{
+   llaunch_payload(path);
+	return 1;
 }
 
 
@@ -154,7 +160,7 @@ void BootStrapNX()
     while (btn_read() & BTN_POWER);
     display_backlight_brightness(a, 1000);
     
-		gfx_con.fntsz = 16;
+		gfx_con.scale = 2;
 		gfx_con_setpos(1,1);
 		gfx_printf("%k%d%k%k%d%k%k%s%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0XFFEA2F1E, burntFuses ,0xFFCCCCCC ,0XFF331AD8 ,mindowngrade ,0xFFCCCCCC);
 		//gfx_con.fntsz = 8;
@@ -167,7 +173,7 @@ void BootStrapNX()
 		
 		
 		//Draw Footer
-		gfx_con.fntsz = 16;
+		gfx_con.scale = 2;
 		gfx_con_setpos(letX, letY+250);
 		gfx_printf("Press %kPOWER%k To Boot %kpayload.bin%k\n",0xFF331ad8,0xFFF9F9F9,0xFF008F39,0xFFF9F9F9);
 		gfx_con_setpos(letX, letY+280);
@@ -216,7 +222,6 @@ void BootStrapNX()
             gfx_con_setpos(1,100);
 			if (sd_mount())
 			{
-                
 				launch_payload("payload.bin");
 				sd_unmount();
 				gfx_printf("%kpayload.bin%k missing%k\n",0xFF008F39,0xFFea2f1e,0xFFF9F9F9);

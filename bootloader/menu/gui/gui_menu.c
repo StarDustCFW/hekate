@@ -1,6 +1,5 @@
 
 #include "gui_menu.h"
-#include "gui_menu_pool.h"
 #include "../tools/touch2.h"
 #include "utils/btn.h"
 #include "../tools/fs_utils.h"
@@ -28,12 +27,12 @@ extern u64 main_menu;
 u64 eme;
 
 /* Render the menu */
-static void gui_menu_render_menu(gui_menu_t*);
+//static void gui_menu_render_menu(gui_menu_t*);
 static void gui_menu_draw_background(gui_menu_t*);
 static void gui_menu_draw_entries(gui_menu_t*);
 
 /* Update menu after an input */
-static int gui_menu_update(gui_menu_t*);
+//static int gui_menu_update(gui_menu_t*);
 
 /* Handle input */
 static int handle_touch_input(gui_menu_t*);
@@ -74,7 +73,8 @@ static void gui_menu_draw_background(gui_menu_t* menu)
        //StarDust version
         static bool a = true;
         if (a){
-            if (sd_mount()){
+            //if (sd_mount())
+            {
                 char *str;
                 void *buf;
                 buf = sd_4_file_read2("StarDust/StarDustV.txt");
@@ -128,7 +128,7 @@ static void gui_menu_draw_entries(gui_menu_t *menu)
         gui_menu_render_entry(menu->entries[i]);
 }
 
-
+/*
 static int gui_menu_update(gui_menu_t *menu)
 {
     u32 res = 0;
@@ -139,7 +139,7 @@ static int gui_menu_update(gui_menu_t *menu)
     gfx_swap_buffer();
     return res;
 }
-
+*/
 int gui_menu_open(gui_menu_t *menu)
 {
     gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
@@ -151,30 +151,23 @@ int gui_menu_open(gui_menu_t *menu)
      * flush buffers
      */
     //gui_menu_render_menu(menu);
-//	sd_unmount();
-    eme = main_menu;
-    //haschange = true;
-    haschange = false;
-    u32 res = 1;
+	//sd_unmount();
+
+    int res = 1;
 	while (res){
         res = handle_touch_input(menu);
-        if (haschange){//eme != main_menu ||
-            /*
-            	gfx_con_setpos( 160, 100);
-                gfx_printf( "cambio a %d desde %d\n",main_menu,eme);
-            */
-
+        if (haschange){
+            res = 3;
             break;
         }
     }
-	return 0;
+	return res;
 }
 
 int gui_menu_boot(gui_menu_t *menu)
 {
     /* 
-     * Render and flush at first render because blocking input won't allow us 
-     * flush buffers
+     * AutoBoot Screen
      */
 		if (sd_file_exists("StarDust/autobootecho.txt")&& !sd_file_exists("StarDust/autoboot.inc"))
 		{
@@ -190,7 +183,8 @@ int gui_menu_boot(gui_menu_t *menu)
 			
 			gfx_con_setpos( 50, 0);
 			char *str;
-			if (sd_mount()){
+			//if (sd_mount())
+            {
 				void *buf;
 				buf = sd_4_file_read2("StarDust/autobootecho.txt");
 				str = buf;
@@ -234,7 +228,7 @@ static int handle_touch_input(gui_menu_t *menu)
 
 		if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE){
 			/* After touch input check if any entry has ben tapped */
-			for(u32 i = 0; i < menu->next_entry; i++)
+			for(int i = 0; i < menu->next_entry; i++)
 			{
 				entry = menu->entries[i];
 
@@ -270,6 +264,7 @@ void create(gui_menu_t *menu, char *path, int x, int y, int (*handler)(void *), 
 	f_close(&fptr);
 
 	gui_menu_append_entry(menu, gui_create_menu_entry("", buf, x, y, file_info_header.width, file_info_header.height, handler, param));
+    free(buf);
 }
 
 void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y, int width, int height)

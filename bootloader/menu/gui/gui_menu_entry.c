@@ -101,7 +101,7 @@ void gui_menu_render_entry(gui_menu_entry_t* entry)
     gfx_render_bmp_arg_bitmap( entry->bitmap,
                                 entry->x, entry->y,
                                 entry->width, entry->height);
-
+    if (strlen(entry->text) > 0)
     render_text_centered(entry, entry->text);
 }
 

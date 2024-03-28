@@ -1541,8 +1541,11 @@ void ipl_main()
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
     //u32 *fb = display_init_framebuffer_log();
+    //u32 *fb = display_init_framebuffer_block();
+    
 	u32 *fb = display_init_framebuffer_pitch();
     //u32 *fb = display_init_framebuffer_pitch_vic();
+   // u32 *fb = display_init_framebuffer_pitch_inv();//inverted
     
 	gfx_init_ctxt(fb, 1280, 720, 720);
 	gfx_con_init();

@@ -5,7 +5,6 @@
 #include "../../gfx/gfx.h"
 #include "../tools/update.h"
 #include "utils/btn.h"
-#include "../core/launcher.h"
 #include "../tools/tools.h"
 
 #include "utils/util.h"

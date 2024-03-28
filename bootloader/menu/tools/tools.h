@@ -3,6 +3,8 @@
 
 __attribute__((noreturn)) void wait_for_button_and_reboot(void);
 
+int launch_payload(char*);
+
 //Replace a pattern of string for another string
 char *str_replace(char *orig, char *rep, char *with);
 //tools

@@ -1,7 +1,6 @@
 #include "tools/fs_utils.h"
 #include "tools/touch2.h"
 #include "gui/gui_argon_menu.h"
-#include "gui/gui_menu_pool.h"
 #include "tools/update.h"
 #include "tools/tools.h"
 #include "input/touch.h"
@@ -13,8 +12,8 @@ int llaunch_payload(char *path)
 }
 
 void takeoff(){
+    //gfx_clear_buffer();
     display_backlight_brightness(h_cfg.backlight, 1000);
-
 	/* Mount Sd card */
 	if (sd_mount())
 	{
