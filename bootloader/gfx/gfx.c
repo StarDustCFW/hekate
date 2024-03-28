@@ -293,7 +293,7 @@ void gfx_putc(char c)
 				}
 			}
 			gfx_con.x += 8;
-			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_column - 8)
+			if (gfx_con.x > gfx_ctxt.width + gfx_column - 8)
 			{
 				gfx_con.x = gfx_column;
 				gfx_con.y += 8;

@@ -17,15 +17,16 @@ void takeoff(){
 	/* Mount Sd card */
 	if (sd_mount())
 	{
-        //minerva_change_freq(FREQ_1600);		
+        minerva_change_freq(FREQ_1600);		
 		Update_SDT();
 		clean_up();
         
-        minerva_change_freq(FREQ_800);
+        //minerva_change_freq(FREQ_800);
         //minerva_change_freq(FREQ_1600);
         
 		/* Cofigure touch input */
 		touch_power_on();
+        
         
 		gui_init_argon_boot();
 		//gui_init_argon_menu();

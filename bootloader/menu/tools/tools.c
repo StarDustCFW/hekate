@@ -270,10 +270,10 @@ void printerCU(char *text,const char *title,int clean)
 		gfx_con_setpos( 10, 5);
 		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
 		gfx_printf( "%s\n",title);
-		gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
+		gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
 		gfx_con.scale = 2;
 		gfx_printf( "%s\n",buff);
-		gfx_printf( "\n->%s<-\n",text);
+		//gfx_printf( "\n->%s<-\n",text);
 		gfx_swap_buffer();
 		if (clean > 100){msleep(clean);clean=2;}
 		if (clean == 0)
@@ -286,6 +286,7 @@ void printerCU(char *text,const char *title,int clean)
 			{
 				count = 0;
 				strcpy(buff, "\0");
+                gfx_clear_buffer();
 			}
 			if(strlen(text) > 0){
 				strcat(buff, text);
@@ -296,6 +297,80 @@ void printerCU(char *text,const char *title,int clean)
 }
 
 /*
+
+    char *primer_salto_linea = strchr(buffer, '\n');
+    if (primer_salto_linea != NULL) {
+        // Mover el puntero después del primer salto de línea
+        char *nuevo_inicio = primer_salto_linea + 1;
+        // Copiar el resto del texto sobre el inicio original
+        memmove(buffer, nuevo_inicio, strlen(nuevo_inicio) + 1);
+    }
+}
+
+void printerCU(char *text,const char *title,int clean)
+{
+		static char titw[9999] = "-.-";
+		static char buff[99999] = "\0";
+		static int count = 0;
+        int maxrow = 81;
+		if(strlen(title) <= 0){
+			title=titw;
+		}
+
+		
+		if (clean == 1){
+			count = 0;
+			strcpy(buff, "\0");
+			strcpy(titw, "\0");
+            gfx_clear_buffer();
+			return;
+		}
+		if (clean != 2) //gfx_clear_buffer();
+
+		gfx_con_setpos( 10, 5);
+		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
+		gfx_printf( "%s\n",title);
+		gfx_con.fntsz = 8;
+		gfx_con_setcol( 0xFFF9F9F9, 0xFFFFFFF, 0xFF191414);
+		//gfx_printf( "%s<-\n",text);
+		gfx_printf( "%s\n%d\n",buff,count);
+        gfx_con.fntsz = 16;
+		gfx_swap_buffer();
+		if (clean > 100){msleep(clean);clean=2;}
+		if (clean == 0)
+		{
+			if(strlen(title) > 0){
+				strcpy(titw, "\0");
+				strcpy(titw, title);
+			}
+			if (count > maxrow)
+			{
+                //gfx_clear_buffer();
+				//count = 0;
+				//strcpy(buff, "\0");
+                remover_primera_linea(buff);
+			}
+			if (count > 500)
+			{
+                gfx_clear_buffer();
+                //gfx_clear_buffer();
+				count = maxrow+1;
+				//strcpy(buff, "\0");
+			}
+			if(strlen(text) > 0){
+                int longitud_actual = strlen(text),longitud_deseada=135;
+                if (longitud_actual < longitud_deseada) {
+                    memset(text + longitud_actual, ' ', longitud_deseada - longitud_actual);
+                    text[longitud_deseada] = '\0';  // Agregar terminador nulo
+                }                
+				strcat(buff, text);
+				strcat(buff, "\n");
+                free(text);
+				count++;
+			}
+		}
+}
+
 void keys(){
 	if (!sd_file_exists ("/bootloader/hekate_keys.ini"))
 	{		
