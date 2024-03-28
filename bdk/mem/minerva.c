@@ -55,7 +55,7 @@ u32 minerva_init()
 	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
 	{
 		mtc_cfg->train_mode = OP_PERIODIC_TRAIN; // Retrain if needed.
-		u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
+		u32 ep_addr = ianos_loader("StarDust/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 		minerva_cfg = (void *)ep_addr;
 
 		return !minerva_cfg ? 1 : 0;
@@ -68,7 +68,7 @@ u32 minerva_init()
 		mtc_tmp.sdram_id  = fuse_read_dramid(false);
 		mtc_tmp.init_done = MTC_NEW_MAGIC;
 
-		u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_tmp);
+		u32 ep_addr = ianos_loader("StarDust/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_tmp);
 
 		// Ensure that Minerva is new.
 		if (mtc_tmp.init_done == MTC_INIT_MAGIC)
@@ -89,7 +89,7 @@ u32 minerva_init()
 	mtc_cfg->sdram_id  = fuse_read_dramid(false);
 	mtc_cfg->init_done = MTC_NEW_MAGIC; // Initialize mtc table.
 
-	u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
+	u32 ep_addr = ianos_loader("StarDust/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 
 	// Ensure that Minerva is new.
 	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
