@@ -50,7 +50,7 @@ bool render_custom_background(custom_gui_t* cg)
     gfx_render_splash( cg->custom_bg);
     return true;
 }
-
+/*
 bool render_custom_title(custom_gui_t* cg)
 {  
     if (cg->title_bmp == NULL)
@@ -61,6 +61,115 @@ bool render_custom_title(custom_gui_t* cg)
     gfx_render_bmp_arg_bitmap( cg->title_bmp, 420, 10, bmp_width, bmp_height);
     return true;
 }
+*/
+/*
+static void _save_log_to_bmp(char *fname)
+{
+    //width, height, and bitcount are the key factors:
+    s32 width = 720;
+    s32 height = 1280;
+    u16 bitcount = 32;//<- 24-bit bitmap
+
+    //take padding in to account
+    int width_in_bytes = ((width * bitcount + 31) / 32) * 4;
+
+    //total image size in bytes, not including header
+    u32 imagesize = width_in_bytes * height;
+
+    //this value is always 40, it's the sizeof(BITMAPINFOHEADER)
+    const u32 bi_size = 40;
+
+    //bitmap bits start after headerfile, 
+    //this is sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)
+    const u32 buf_offset_bits = 54; 
+
+    //total file size:
+    u32 filesize = 54 + imagesize;
+
+    //number of planes is usually 1
+    const u16 bi_planes = 1;
+
+
+
+
+
+
+	u32 *fb_ptr = (u32 *)LOG_FB_ADDRESS;
+
+	// Check if there's log written.
+	bool log_changed = false;
+	for (u32 i = 0; i < 0xCD000; i++)
+	{
+		if (fb_ptr[i] != 0)
+		{
+			log_changed = true;
+			break;
+		}
+	}
+
+	if (!log_changed)
+		return;
+
+	const u32 file_size = LOG_FB_SZ + 0x36;
+	u8 *bitmap = malloc(file_size);
+
+	// Reconstruct FB for bottom-top, landscape bmp. Rotation: 656x1280 -> 1280x656.
+	u32 *fb = malloc(LOG_FB_SZ);
+	for (int x = 1279; x > - 1; x--)
+	{
+		for (int y = 655; y > -1; y--)
+			fb[y * 1280 + x] = *fb_ptr++;
+	}
+
+	manual_system_maintenance(true);
+
+	memcpy(bitmap + 0x36, fb, LOG_FB_SZ);
+
+	typedef struct _bmp_t
+	{
+		u16 magic;
+		u32 size;
+		u32 rsvd;
+		u32 data_off;
+		u32 hdr_size;
+		u32 width;
+		u32 height;
+		u16 planes;
+		u16 pxl_bits;
+		u32 comp;
+		u32 img_size;
+		u32 res_h;
+		u32 res_v;
+		u64 rsvd2;
+	} __attribute__((packed)) bmp_t;
+
+	bmp_t *bmp = (bmp_t *)bitmap;
+
+	bmp->magic    = 0x4D42;
+	bmp->size     = file_size;
+	bmp->rsvd     = 0;
+	bmp->data_off = 0x36;
+	bmp->hdr_size = 40;
+	bmp->width    = 1280;
+	bmp->height   = 656;
+	bmp->planes   = 1;
+	bmp->pxl_bits = 32;
+	bmp->comp     = 0;
+	bmp->img_size = LOG_FB_SZ;
+	bmp->res_h    = 2834;
+	bmp->res_v    = 2834;
+	bmp->rsvd2    = 0;
+
+	char path[0x80];
+	strcpy(path, "StarDust");
+	s_printf(path + strlen(path), "/nyx%s_log.bmp", fname);
+	sd_save_to_file(bitmap, file_size, path);
+
+	free(bitmap);
+	free(fb);
+}
+
+*/
 
 int screenshot(void* params)
 {
@@ -97,8 +206,8 @@ SDStrap();
     memcpy(header + 2 , &filesize, 4);
     memcpy(header + 10, &buf_offset_bits, 4);
     memcpy(header + 14, &bi_size, 4);
-    memcpy(header + 18, &width, 4);
-    memcpy(header + 22, &height, 4);
+    memcpy(header + 18, &height, 4);
+    memcpy(header + 22, &width, 4);
     memcpy(header + 26, &bi_planes, 2);
     memcpy(header + 28, &bitcount, 2);
     memcpy(header + 34, &imagesize, 4);
@@ -126,7 +235,45 @@ SDStrap();
 	}
     u8* buff = (u8*)malloc(imagesize + 54);
     memcpy(buff, header, 54);
-    memcpy(buff + 54, gfx_ctxt.fb, imagesize);
+    
+    u32* buffer = gfx_ctxt.fb + gfx_ctxt.width * gfx_ctxt.stride * 4;;
+    u32* center = gfx_ctxt.fb;
+    
+    int x, y;
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            /*
+            // Calcular las coordenadas del píxel rotado en dirección horaria y volteado horizontalmente
+            int new_x = y;
+            int new_y = width - x - 1;
+            // Obtener el índice del píxel en el buffer rotado
+            int index_rotado = new_y * height + new_x;
+            int index_original = y * width + x;
+            // Copiar el píxel al buffer rotado
+            
+            // Calcular las coordenadas del píxel rotado en sentido horario
+            int new_x = height - y - 1;
+            int new_y = x;
+            // Obtener el índice del píxel en el buffer rotado
+            int index_rotado = new_y * height + new_x;
+            int index_original = y * width + x;
+            // Copiar el píxel al buffer rotado            
+            */
+            // Calcular las coordenadas del píxel rotado en sentido antihorario y volteado horizontalmente
+            int new_x = height - y - 1;
+            int new_y = width - x - 1;
+            // Obtener el índice del píxel en el buffer rotado
+            int index_rotado = new_y * height + new_x;
+            int index_original = y * width + x;
+            // Copiar el píxel al buffer rotado            
+            buffer[index_rotado] = center[index_original];
+        }
+    }
+
+    memcpy(buff + 54, buffer, imagesize);
+
+    //gfx_render_bmp_arg_bitmap(buff, 1, 5, 1280, 720);
+
     sd_save_2_file(buff, imagesize + 54, namef);
     free(buff);
 
