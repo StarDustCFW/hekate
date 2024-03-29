@@ -11,8 +11,8 @@ extern sdmmc_storage_t g_sd_storage;
 extern FATFS g_sd_fs;
 extern bool sd_mounted;
 
-bool sd_mount();
-void sd_unmount();
+bool delete_file(const char* filename);
+
 void *sd_4_file_read2(const char *path);
 char *read_file_string(char *path);
 int sd_save_2_file(void *buf, u32 size,const  char *filename);

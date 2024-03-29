@@ -11,7 +11,7 @@ IPL_MAGIC := 0x43544349 #"ICTC"
 include ./Versions.inc
 
 ################################################################################
-BUILD_VER := 144
+BUILD_VER := 1
 TARGET := payload
 BUILDDIR := build
 OUTPUTDIR := output
@@ -64,7 +64,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	lz.o lz4.o blz.o \
 	diskio.o ff.o ffunicode.o ffsystem.o \
-	elfload.o elfreloc_arm.o \
+	elfload.o elfreloc_arm.o sprintf.o \
 )
 
 #$(info   $(OBJS))

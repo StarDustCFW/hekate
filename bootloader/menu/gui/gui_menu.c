@@ -47,7 +47,17 @@ gui_menu_t *gui_menu_create(const char *title,char *back)
     //gui_menu_push_to_pool((void*)menu);
 	return menu;
 }
-
+bool gui_menu_update(gui_menu_t **menu,char *back)
+{
+    if ((*menu) == NULL)
+    {
+        (*menu) = gui_menu_create("ArgonNX",back);
+        return 0;
+    }
+    custom_gui_end((*menu)->custom_gui);
+    (*menu)->custom_gui = custom_gui_load(back);
+	return 1;
+}
 
 void gui_menu_append_entry(gui_menu_t *menu, gui_menu_entry_t *menu_entry)
 {
@@ -161,10 +171,11 @@ int gui_menu_open(gui_menu_t *menu)
             break;
         }
     }
+    minerva_periodic_training();
 	return res;
 }
 
-int gui_menu_boot(gui_menu_t *menu)
+int gui_menu_boot(char* imagemenus)
 {
     /* 
      * AutoBoot Screen
@@ -172,8 +183,13 @@ int gui_menu_boot(gui_menu_t *menu)
 		if (sd_file_exists("StarDust/autobootecho.txt")&& !sd_file_exists("StarDust/autoboot.inc"))
 		{
             gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
-			if(!render_custom_background(menu->custom_gui))
+            
+            char* imagemenus = "background.bmp";
+            custom_gui_t* cg = custom_gui_load(imagemenus);
+			if(!render_custom_background(cg))
 				gfx_clear_color( 0xFF191414);
+            custom_gui_end(cg);
+
 			gfx_con.scale = 3;
 			gfx_con_setpos( 1070, 0);
 			gfx_con_setcol( 0xFFF9F9F9, 0xFFFFFFFF, 0xFF191414);
@@ -235,6 +251,7 @@ static int handle_touch_input(gui_menu_t *menu)
 				if (entry->handler != NULL 
 					&& is_rect_touched(&event, entry->x, entry->y, entry->width, entry->height))
 				{
+                    menu->selected_index = i;
 					if (entry->handler(entry->param) != 0)
 						return 0;
 				}

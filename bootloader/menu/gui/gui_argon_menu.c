@@ -48,7 +48,7 @@ u32 brilloM = 50;
 const char *sysserial;
 const char *emuserial;
 char *buffer_blk;
-void int_menus();
+void upd_menus();
 //menus
 u64 main_menu = 0;
 char* imagemenus = "background.bmp";
@@ -82,17 +82,16 @@ void gui_init_argon_boot(void)
 		iamsafe = 1;
 	}
 	
-	gui_menu_t *menu = gui_menu_create("ArgonNX", imagemenus);
+	//gui_menu_t *menu = gui_menu_create("ArgonNX", imagemenus);
 	change_brightness(0);
 
 	//show display without icons
 	int res = 0;
-	if (Incac != 1) {
-		res = gui_menu_boot(menu);
+	if ((Incac != 1) & (iamsafe != 1)) {
+		res = gui_menu_boot(imagemenus);
 	}
-			
 
-	if (res > 0){gfx_swap_buffer();}
+	//if (res > 0){gfx_swap_buffer();}
 	//corrections on start
 	f_mkdir("StarDust/flags");
 	f_unlink("auto.bak");
@@ -120,11 +119,11 @@ void gui_init_argon_boot(void)
 	}
 
 	//waith user input
-	if (sd_file_exists("StarDust/autobootecho.txt") & (Incac == 0))
+	if (sd_file_exists("StarDust/autobootecho.txt") & (Incac == 0) & (iamsafe != 1))
 		btn_wait_timeout(1000, BTN_VOL_UP);
 
 	bool cancel_auto_chainloading = btn_read() & BTN_VOL_UP;
-	if (sd_file_exists("StarDust/autobootecho.txt") && (!cancel_auto_chainloading) & (Incac == 0))
+	if (sd_file_exists("StarDust/autobootecho.txt") && (!cancel_auto_chainloading) & (Incac == 0) & (iamsafe != 1))
 	{
 		//autoboot
 		if (strstr(Sversion, "A") != NULL)
@@ -150,23 +149,21 @@ void gui_init_argon_boot(void)
 	gui_init_argon_menu();
 }
 
-gui_menu_t *menu;
 gui_menu_t *menu_0;
 gui_menu_t *menu_1;
 gui_menu_t *menu_2;
 /*
+gui_menu_t *menu;
 gui_menu_t *menu_3;
 gui_menu_t *menu_4;
 gui_menu_t *menu_5;
 
 */
 
-void int_menus(){
-    menu_0 = gui_menu_create("ArgonNX", "background.bmp");
-    menu_1 = gui_menu_create("ArgonNX", "back-set.bmp");
-    menu_2 = gui_menu_create("ArgonNX", "back-inc.bmp");
-//    menu_3 = gui_menu_create("ArgonNX", "back-mem.bmp");
-//    menu_5 = gui_menu_create("ArgonNX", "back-exp.bmp");
+void upd_menus(){
+    gui_menu_update(&menu_0, "background.bmp");
+    gui_menu_update(&menu_1, "back-set.bmp");
+    gui_menu_update(&menu_2, "back-inc.bmp");
 }
 
 void pre_load_menus(int menus, bool StarUp)
@@ -336,8 +333,8 @@ void pre_load_menus(int menus, bool StarUp)
 
 		//dinamic
 		/*
-			menu->entries[menu->next_entry] = menu_entry;
-			menu->next_entry++;
+			menu_1->entries[menu->next_entry] = menu_entry;
+			menu_1->next_entry++;
 		*/
 		//draw autoboot
 		if (sd_file_exists("StarDust/autobootecho.txt"))
@@ -428,7 +425,6 @@ void pre_load_menus(int menus, bool StarUp)
 			create(menu_1, "Icons/day.bmp", 1200, 100, (int (*)(void *))medislay, (void *)0);
 		else
 			create(menu_1, "Icons/nay.bmp", 1200, 100, (int (*)(void *))medislay, (void *)0);
-		menu = menu_1;
 	}
 
 	if (menus == 2)
@@ -618,13 +614,14 @@ void pre_load_menus(int menus, bool StarUp)
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
-    //I+init Menus
-    int_menus();
+    //Iinit Menus
+    upd_menus();
 	pre_load_menus(0, 1);
-    menu = menu_0;
+    
 
 	//main menu loop
     while(true){
+        change_brightness(0);
         SDStrap();
         switch (main_menu)
         {
@@ -633,9 +630,7 @@ void gui_init_argon_menu(void)
             {
                 if (menu_0->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                if (menu_0 == menu)
-                    break;
-                menu = menu_0;
+                gui_menu_open(menu_0);
             }
             break;
 
@@ -643,9 +638,7 @@ void gui_init_argon_menu(void)
             {
                 if (menu_1->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                if (menu_1 == menu)
-                    break;
-                menu = menu_1;
+                gui_menu_open(menu_1);
             }
             break;
 
@@ -653,9 +646,7 @@ void gui_init_argon_menu(void)
             {
                 if (menu_2->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                if (menu_2 == menu)
-                    break;
-                menu = menu_2;
+                gui_menu_open(menu_2);
             }
             break;
         }
@@ -663,9 +654,8 @@ void gui_init_argon_menu(void)
 
         //static_menu_elements(menu);
         /* Start menu_1 */
-        change_brightness(0);
         
-        gui_menu_open(menu);
+        //gui_menu_open(menu);
         /*
         gfx_con_setpos( 160, 50);
         gfx_printf( "end off menu \n");
@@ -1074,7 +1064,7 @@ int tool_theme(char *param)
 	SDStrap();
 	change_brightness(1);
 	saveTheme(param);
-    int_menus();
+    upd_menus();
 	pre_load_menus(1, 1);
 	return 1;
 }
