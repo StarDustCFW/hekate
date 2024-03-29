@@ -165,13 +165,12 @@ void clean_up()
         f_unlink("/atmosphere/contents/0100000000001013/exefs.nsp");
         //Start Updated Stardust Menu TODO...240326 ready
         //_launch_payload("StarDust/payloads/hekate.bin", false, false);
-        return;
     }
 
 	//Fix old Emunand transfer
-	//fix_emu();
-
-	f_unlink("/fixer.del");
+	//fix_emu()
+    
+    f_unlink("fixer.del");
 	printerCU("", "", 1); //flush print
 }
 
