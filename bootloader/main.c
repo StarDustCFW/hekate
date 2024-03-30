@@ -272,9 +272,10 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
 	// Launch our payload.
-	if (!update)
+	if (!update){
+		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 		(*ext_payload_ptr)();
-	else
+	}else
 	{
 		// Set updated flag to skip check on launch.
 		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
@@ -288,7 +289,7 @@ out:
 		EPRINTF("Failed to launch payload!");
 	}
 }
-
+/*
 static void _launch_payloads()
 {
 	u8 max_entries = 61;
@@ -642,12 +643,12 @@ out:
 
 	btn_wait();
 }
-
+*/
 #define NYX_VER_OFF 0x9C
-
+/*
 static void _nyx_load_run()
 {
-	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
+	u8 *nyx = sd_file_read("bootloader/ssys/nyx.bin", NULL);
 	if (!nyx)
 		return;
 
@@ -712,7 +713,8 @@ static void _nyx_load_run()
 	void (*nyx_ptr)() = (void *)nyx;
 	(*nyx_ptr)();
 }
-
+*/
+/*
 static ini_sec_t *_get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry, char **emummc_path)
 {
 	ini_sec_t *cfg_sec = NULL;
@@ -742,7 +744,8 @@ static ini_sec_t *_get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustom
 
 	return cfg_sec;
 }
-
+*/
+/*
 static void _bootloader_corruption_protect()
 {
 	FILINFO fno;
@@ -762,6 +765,7 @@ static void _check_for_updated_bootloader()
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
 	else
 	{
+        
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
 			_launch_payload("bootloader/update.bin", true, false);
@@ -771,6 +775,7 @@ static void _check_for_updated_bootloader()
 			is_ipl_updated(buf, "bootloader/update.bin", true);
 			free(buf);
 		}
+        
 	}
 }
 
@@ -1071,7 +1076,7 @@ out:
 
 	_nyx_load_run();
 }
-
+*/
 #define EXCP_EN_ADDR   0x4003FFFC
 #define  EXCP_MAGIC       0x30505645 // "EVP0".
 #define EXCP_TYPE_ADDR 0x4003FFF8
@@ -1090,7 +1095,7 @@ typedef struct _pstore_buf {
 	u32 start;
 	u32 size;
 } pstore_buf_t;
-
+/*
 static void _show_errors()
 {
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
@@ -1211,7 +1216,7 @@ static void _show_errors()
 		msleep(500);  // Guard against force menu VOL-.
 	}
 }
-
+*/
 static void _check_low_battery()
 {
 	if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
@@ -1296,7 +1301,7 @@ static void _check_low_battery()
 			{
 				display_init();
 				u32 *fb = display_init_framebuffer_pitch();
-				gfx_init_ctxt(fb, 720, 1280, 720);
+				gfx_init_ctxt(fb, 1280, 720, 720);
 
 				gfx_set_rect_rgb(battery_icon,         BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_BATT_HEIGHT, 16, battery_icon_y_pos);
 				if (current_charge_status)
@@ -1369,7 +1374,7 @@ static void _r2p_get_config_t210b01()
 		break;
 	}
 }
-
+/*
 static void _ipl_reload()
 {
 	hw_reinit_workaround(false, 0);
@@ -1479,9 +1484,10 @@ ment_t ment_top[] = {
 };
 
 menu_t menu_top = { ment_top, "hekate v6.1.1", 0, 0 };
-
+*/
 extern void pivot_stack(u32 stack_top);
 
+#include "menu/Land.h"
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -1534,8 +1540,14 @@ void ipl_main()
 
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
+    //u32 *fb = display_init_framebuffer_log();
+    //u32 *fb = display_init_framebuffer_block();
+    
 	u32 *fb = display_init_framebuffer_pitch();
-	gfx_init_ctxt(fb, 720, 1280, 720);
+    //u32 *fb = display_init_framebuffer_pitch_vic();
+   // u32 *fb = display_init_framebuffer_pitch_inv();//inverted
+    
+	gfx_init_ctxt(fb, 1280, 720, 720);
 	gfx_con_init();
 
 	display_backlight_pwm_init();
@@ -1547,23 +1559,26 @@ skip_lp0_minerva_config:
 	// Get R2P config from RTC.
 	if (h_cfg.t210b01)
 		_r2p_get_config_t210b01();
+    
+    
 
+    takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
-	_show_errors();
+	//_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-		_auto_launch();
+//	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+//		_auto_launch();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();
 
 	// Set ram to a freq that doesn't need periodic training.
 	minerva_change_freq(FREQ_800);
-
+/*
 	while (true)
 		tui_do_menu(&menu_top);
-
+*/
 	// Halt BPMP if we managed to get out of execution.
 	while (true)
 		bpmp_halt();
