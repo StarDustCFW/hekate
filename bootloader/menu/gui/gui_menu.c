@@ -1,4 +1,3 @@
-#include "gui_menu_pool.h"
 #include "gui_menu.h"
 #include "../tools/touch2.h"
 #include "utils/btn.h"
@@ -311,17 +310,28 @@ void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y, int width, int
 
 char *them = "skins/xbox";
 
-void loadTheme()
-{
-	if (!sd_file_exists("/StarDust/theme"))
-		return;
-	them = read_file_string("/StarDust/theme");
+void loadTheme() {
+    if (!sd_file_exists("/StarDust/theme"))
+        return;
+
+    char *temp = read_file_string("/StarDust/theme");
+    if (temp && strlen(temp) > 6) {
+        strcpy(them, temp); // Suponiendo que "them" es un char array predefinido
+        free(temp); // Liberar la memoria asignada por read_file_string
+    } else {
+        free(temp); // Liberar la memoria antes de eliminar el archivo
+        f_unlink("/StarDust/theme");
+    }
 }
 
 void saveTheme(char *param)
 {
-	them = param;
-	sd_save_2_file(param, strlen(param), "/StarDust/theme");
+    gfx_con_setpos(80, 10);
+    gfx_printf( "%s\n",param);
+    if (param && strlen(param) > 6) {
+        them = param;
+        sd_save_2_file(param, strlen(param), "/StarDust/theme");
+    }
 }
 
 void *theme(char *path)
