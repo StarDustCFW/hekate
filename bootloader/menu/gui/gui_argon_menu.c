@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "gui_menu_pool.h"
 #include "power/max17050.h"
 #include <string.h>
 #include "gui_argon_menu.h"
@@ -286,7 +285,7 @@ void pre_load_menus(int menuses, bool StarUp)
 		//call menu 1
 		create(menus[0], "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
         static_menu_elements(menus[0]);
-        create_switch(menus[0], "", "Icons/day.bmp", "Icons/nay.bmp", !sd_file_exists("StarDust/flags/b50.flag"), 1200, 100, (int (*)(void *))medislay, (void *)0, (int (*)(void *))medislay, (void *)0);
+        //create_switch(menus[0], "", "Icons/day.bmp", "Icons/nay.bmp", !sd_file_exists("StarDust/flags/b50.flag"), 1200, 100, (int (*)(void *))medislay, (void *)0, (int (*)(void *))medislay, (void *)0);
 	}
 
 	if (menuses == 1 || StarUp)
@@ -879,25 +878,19 @@ int tool_servises_on(char *title)
 {
 	SDStrap();
 	change_brightness(1);
-	char *path = (char *)malloc(256);
+    char path[100];
+	//char *path = (char *)malloc(256);
 	if (isAMS)
 	{
-		strcpy(path, "atmosphere/contents/");
-		strcat(path, title);
-		strcat(path, "/flags");
-		f_mkdir(path);
-		strcat(path, "/boot2.flag");
-		sd_save_2_file("", 0, path);
+        s_printf(path, "atmosphere/contents/%s/flags", title);
 	}
 	else
 	{
-		strcpy(path, "sxos/titles/");
-		strcat(path, title);
-		strcat(path, "/flags");
-		f_mkdir(path);
-		strcat(path, "/boot2.flag");
-		sd_save_2_file("", 0, path);
+        s_printf(path, "sxos/titles/%s/flags", title);
 	}
+    f_mkdir(path);
+    s_printf(path, "%s/boot2.flag", path);
+    sd_save_2_file("", 0, path);
 	//pre_load_menus(1, 0);
     return 1;
 }
@@ -906,21 +899,18 @@ int tool_servises_off(char *title)
 {
 	SDStrap();
 	change_brightness(1);
-	char *path = (char *)malloc(256);
+    char path[100];
+	//char *path = (char *)malloc(256);
 	if (isAMS)
 	{
-		strcpy(path, "atmosphere/contents/");
-		strcat(path, title);
-		strcat(path, "/flags/boot2.flag");
-		f_unlink(path);
+        s_printf(path, "atmosphere/contents/%s/flags", title);
 	}
 	else
 	{
-		strcpy(path, "sxos/titles/");
-		strcat(path, title);
-		strcat(path, "/flags/boot2.flag");
-		f_unlink(path);
+        s_printf(path, "sxos/titles/%s/flags", title);
 	}
+    s_printf(path, "%s/boot2.flag", path);
+    f_unlink(path);
 	//pre_load_menus(1, 0);
     return 1;
 }
@@ -929,12 +919,12 @@ int tool_servises_off(char *title)
 int tool_Themes_on(char *cfw)
 {
 	SDStrap();
-	char *path = (char *)malloc(256);
+	char path[100];
+    
 	if (strstr(cfw, "sxos") != NULL)
 	{
-		strcpy(path, cfw);
 		moverall("/sxos/titles/0100000000001000/sfmor", "/sxos/titles/0100000000001000/romfs", "*", "");
-		strcat(path, "/titles/0100000000001000/fsmitm.flag");
+        s_printf(path, "%s/titles/0100000000001000/fsmitm.flag", cfw);
 		sd_save_2_file("", 0, path);
 	}
 
@@ -1007,34 +997,31 @@ int tool_menu_rem(void *param)
 	{
 		if (strlen(&folder_ams[r * 256]) <= 100)
 		{
-			char *source_ams = (char *)malloc(256);
-			strcpy(source_ams, "/atmosphere/contents/");
-			strcat(source_ams, &folder_ams[r * 256]);
-			strcat(source_ams, "/flags/boot2.flag");
-            printerCU(source_ams, "", 0);
-
+			char source_ams[100];
+            s_printf(source_ams, "/atmosphere/contents/%s/flags/boot2.flag",&folder_ams[r * 256]);
 			f_unlink(source_ams);
 		}
 		r++;
 	}
-
+    free(folder_ams);
 	char *folder_sxos = listfol("/sxos/titles", "*", true);
 	u32 e = 0;
 	while (folder_sxos[e * 256])
 	{
 		if (strlen(&folder_sxos[e * 256]) <= 100)
 		{
-			char *source_sxos = (char *)malloc(256);
-			strcpy(source_sxos, "/sxos/titles/");
-			strcat(source_sxos, &folder_sxos[e * 256]);
-			strcat(source_sxos, "/flags/boot2.flag");
+			char source_sxos[100];
+            s_printf(source_sxos, "/sxos/titles/%s/flags/boot2.flag",&folder_sxos[r * 256]);
 			f_unlink(source_sxos);
 		}
 		e++;
 	}
+    free(folder_sxos);
+
     //Sigpatches
     sd_save_2_file("", 0, "atmosphere/contents/420000000000000B/flags/boot2.flag");
     
+    //enable cleanUP
 	sd_save_2_file("", 0, "StarDust/flags/IamSafe.flag");
 	sd_save_2_file("#Safeboot flag", 13, "fixer.del");
     printerCU("", "", 1);
@@ -1092,21 +1079,17 @@ void serv_display(gui_menu_t *menut, char *titleid, char *name)
 	if (servstep > 9)
 		return;
 
-	char *path = (char *)malloc(256);
-	if (isAMS)
-		strcpy(path, "atmosphere/contents/");
-	else
-		strcpy(path, "sxos/titles/");
-	strcat(path, titleid);
-	strcat(path, "/exefs.nsp");
+	char path[100];
 
-	char *flagpath = (char *)malloc(256);
 	if (isAMS)
-		strcpy(flagpath, "atmosphere/contents/");
+        s_printf(path, "/atmosphere/contents/%s",titleid);
 	else
-		strcpy(flagpath, "sxos/titles/");
-	strcat(flagpath, titleid);
-	strcat(flagpath, "/flags/boot2.flag");
+        s_printf(path, "sxos/titles/%s",titleid);
+
+    
+	char flagpath[100];
+    s_printf(flagpath, "%s/flags/boot2.flag",path);
+    s_printf(path, "%s/exefs.nsp",path);
 
 	if (!sd_file_exists(path))
 		return;
@@ -1208,12 +1191,15 @@ int AThemes_list(gui_menu_t *menut, u32 gridX, u32 gridY){
 				gui_menu_append_entry(menut, gui_create_menu_entry("", sd_4_file_read2(source_icon), gridX, gridY, 70, 70, (int (*)(void *))tool_theme, (void *)source_fol));
 				gridX = gridX + tm_ajust;
 			}
+            free(source_fol);
+            free(source_icon);
 			w++;
 		}
 		if (w == 11)
 			break;
 		r++;
 	}
+    free(folder);
 	return 0;
 }
 
