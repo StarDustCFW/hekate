@@ -47,13 +47,39 @@ gui_menu_entry_t *gui_create_menu_entry(const char *text,
     }
     else
         menu_entry->bitmap = sd_4_file_read2(DEFAULT_LOGO);
-
+    menu_entry->bit = true;
+    menu_entry->type = 0;
     menu_entry->x = x;
     menu_entry->y = y;
     menu_entry->width = width;
     menu_entry->height = height;
     menu_entry->handler = handler;
     menu_entry->param = param;
+    return menu_entry;
+}
+gui_menu_entry_t *gui_create_menu_entry_switch(const char *text,
+                                        u8 *bitmap,
+                                        u8 *bitmap2,
+                                        bool bit,
+                                        u32 x, u32 y,
+                                        u32 width, u32 height,
+                                        int (*handler)(void *), void *param,int (*handler2)(void *), void *param2)
+{
+    gui_menu_entry_t *menu_entry = (gui_menu_entry_t *)malloc(sizeof(gui_menu_entry_t));
+    strcpy(menu_entry->text, text);
+
+    menu_entry->bitmap = bitmap;
+    menu_entry->bitmap2 = bitmap2;
+    menu_entry->bit = bit;
+    menu_entry->type = 1;
+    menu_entry->x = x;
+    menu_entry->y = y;
+    menu_entry->width = width;
+    menu_entry->height = height;
+    menu_entry->handler = handler;
+    menu_entry->param = param;
+    menu_entry->handler2 = handler2;
+    menu_entry->param2 = param2;
     return menu_entry;
 }
 
@@ -87,7 +113,7 @@ static void render_text_centered(gui_menu_entry_t *entry, char *text)
 
     /* Set text below the logo and centered */
     s32 x_offset = -(get_text_width(text) - entry->width) / 2;
-    u32 y_offset = entry->bitmap != NULL ? entry->height + 20 : 0;
+    u32 y_offset = entry->bitmap != NULL ? entry->height /2 - (gfx_con.fntsz/2): 0;
 
     gfx_con.scale = 2;
     gfx_con_setpos( entry->x + x_offset, entry->y + y_offset);
@@ -98,16 +124,25 @@ static void render_text_centered(gui_menu_entry_t *entry, char *text)
 /* Renders a gfx menu entry */
 void gui_menu_render_entry(gui_menu_entry_t* entry)
 {
-    gfx_render_bmp_arg_bitmap( entry->bitmap,
-                                entry->x, entry->y,
-                                entry->width, entry->height);
+    if (entry->bit){
+        gfx_render_bmp_arg_bitmap( entry->bitmap,
+                                    entry->x, entry->y,
+                                    entry->width, entry->height);
+    }else{
+        gfx_render_bmp_arg_bitmap( entry->bitmap2,
+                                    entry->x, entry->y,
+                                    entry->width, entry->height);
+    }
+
+
     if (strlen(entry->text) > 0)
-    render_text_centered(entry, entry->text);
+        render_text_centered(entry, entry->text);
 }
 
 void gui_menu_entry_destroy(gui_menu_entry_t *entry)
 {
     free(entry->bitmap);
+    free(entry->bitmap2);
     free(entry->text);
     free(entry->param);
     free(entry);

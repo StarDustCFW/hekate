@@ -26,9 +26,14 @@ typedef struct
     u32 y;
     u32 width;
     u32 height;
+    int type;
     u8* bitmap;
+    u8* bitmap2;
+    bool bit;
 	void *param;
 	int (*handler)(void *);
+	void *param2;
+	int (*handler2)(void *);
 } gui_menu_entry_t;
 
 /* Creates a menu entry */
@@ -37,6 +42,12 @@ gui_menu_entry_t *gui_create_menu_entry(const char *text,
                                         u32 x, u32 y, 
                                         u32 width, u32 height, 
                                         int (*handler)(void *), void *param);
+
+gui_menu_entry_t *gui_create_menu_entry_switch(const char *text,
+                                        u8 *bitmap, u8 *bitmap2,
+                                        bool bit,
+                                        u32 x, u32 y, u32 width, u32 height,
+                                        int (*handler)(void *), void *param, int (*handler2)(void *), void *param2);
 
 gui_menu_entry_t *gui_create_menu_entry_no_bitmap(const char *text, 
                                                     u32 x, u32 y, 

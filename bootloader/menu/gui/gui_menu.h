@@ -61,6 +61,7 @@ typedef struct dip_hdr
 
 void create(gui_menu_t *menu, char *path, int x, int y, int (*handler)(void *), void *param);
 void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y, int width, int height);
+void create_switch(gui_menu_t *menu, const char *name, char *path, char *path2, bool bit, int x, int y, int (*handler)(void *), void *param, int (*handler2)(void *), void *param2);
 
 void loadTheme();
 void saveTheme(char *param);
@@ -79,5 +80,7 @@ int gui_menu_boot(char* imagemenus);
 
 /* Deallocate a menu from heap */
 void gui_menu_destroy(gui_menu_t *menu);
+
+extern void change_brightness(u32 type);
 
 #endif

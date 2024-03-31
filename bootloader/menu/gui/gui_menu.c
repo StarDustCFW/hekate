@@ -1,4 +1,4 @@
-
+#include "gui_menu_pool.h"
 #include "gui_menu.h"
 #include "../tools/touch2.h"
 #include "utils/btn.h"
@@ -21,9 +21,9 @@
 #define MAJOR_VERSION 0
 #define REVI_VERSION LOAD_BUILD_VER
 
-char Sversion[4];
+char Sversion[5];
 bool haschange = false;
-extern u64 main_menu;
+extern int main_menu;
 u64 eme;
 
 /* Render the menu */
@@ -35,7 +35,7 @@ static void gui_menu_draw_entries(gui_menu_t*);
 //static int gui_menu_update(gui_menu_t*);
 
 /* Handle input */
-static int handle_touch_input(gui_menu_t*);
+static int handle_touch_input(gui_menu_t**);
 extern u32 isAMS;
 gui_menu_t *gui_menu_create(const char *title,char *back)
 {
@@ -54,8 +54,8 @@ bool gui_menu_update(gui_menu_t **menu,char *back)
         (*menu) = gui_menu_create("ArgonNX",back);
         return 0;
     }
-    custom_gui_end((*menu)->custom_gui);
-    (*menu)->custom_gui = custom_gui_load(back);
+    gui_menu_destroy((*menu));
+    (*menu) = gui_menu_create("ArgonNX",back);
 	return 1;
 }
 
@@ -68,70 +68,62 @@ void gui_menu_append_entry(gui_menu_t *menu, gui_menu_entry_t *menu_entry)
 	menu->next_entry++;
 }
 
-static void gui_menu_draw_background(gui_menu_t* menu)
+static void gui_menu_draw_background(gui_menu_t *menu)
 {
     if(!render_custom_background(menu->custom_gui))
         gfx_clear_color( 0xFF191414);
-    
-    /* Render title */
-//    if (!render_custom_title(menu->custom_gui)) 
-//   {
-//        gfx_con.scale = 2;
-//        gfx_con_setpos( 15, 10);
-//        gfx_printf( "ArgonNX v%d.%d %k%d%k", MAJOR_VERSION, MINOR_VERSION,0xFF00FF22, REVI_VERSION ,0xFFCCCCCC);
- //   }
-       //StarDust version
-        static bool a = true;
-        if (a){
-            //if (sd_mount())
+    //StarDust version
+    static bool a = true;
+    if (a){
+        //if (sd_mount())
+        {
+            char *str;
+            void *buf;
+            buf = sd_4_file_read2("StarDust/StarDustV.txt");
+            str = buf;
+            if (strlen(str)!=0)
             {
-                char *str;
-                void *buf;
-                buf = sd_4_file_read2("StarDust/StarDustV.txt");
-                str = buf;
-                if (strlen(str)!=0)
-                {
                     
-                    Sversion[0] = str[0];
-                    Sversion[1] = str[1];
-                    Sversion[2] = str[2];
-                    Sversion[3] = str[3];		
-                }
-                
+                Sversion[0] = str[0];
+                Sversion[1] = str[1];
+                Sversion[2] = str[2];
+                Sversion[3] = str[3];
+                Sversion[4] = 0;	
             }
-            a = false;
+            
         }
+        a = false;
+    }
 
-        Sversion[4] = '\0';		
-		gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
-		gfx_con.scale = 2;
-		gfx_con_setpos( 1200, 50);
-		gfx_printf( "v%s", Sversion);
+    gfx_con_setcol( 0xFFCCCCCC, 0xFFCCCCCC, 0xFF191414);
+    gfx_con.scale = 2;
+    gfx_con_setpos( 1200, 50);
+    gfx_printf( "v%s\n", Sversion);
 
 		
-	u32 burntFuses = fusesB();
-	//char* mindowngrade = fusesM();
+    u32 burntFuses = fusesB();
+    //char* mindowngrade = fusesM();
 
-		gfx_con_setpos( 1, 1);
-//		gfx_con_setpos( 1145+jump, 60);
-		gfx_printf("%k%d%k%k%d%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0xFFea2f1e, burntFuses ,0xFFCCCCCC);
-		gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
+	gfx_con_setpos( 1, 1);
+//	gfx_con_setpos( 1145+jump, 60);
+	gfx_printf("%k%d%k%k%d%k\n\n",0xFF00FF22, REVI_VERSION ,0xFFCCCCCC, 0xFFea2f1e, burntFuses ,0xFFCCCCCC);
+	gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
 /* 
 Rojo  0xFFea2f1e
 azul  0xFF331ad8
       0xFFF9F9F9
 Blank 0xFFCCCCCC
 verde 0xFF00FF22
-*/	
+*/
 }
-/*
+
 static void gui_menu_render_menu(gui_menu_t* menu) 
 {
     gui_menu_draw_background(menu);
     gui_menu_draw_entries(menu);
     gfx_swap_buffer();
 }
-*/
+
 static void gui_menu_draw_entries(gui_menu_t *menu)
 {
     for (s16 i = 0; i < menu->next_entry; i++)
@@ -153,22 +145,21 @@ static int gui_menu_update(gui_menu_t *menu)
 int gui_menu_open(gui_menu_t *menu)
 {
     gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
-    gui_menu_draw_background(menu);
-    gui_menu_draw_entries(menu);
-    gfx_swap_buffer();
+    gui_menu_render_menu(menu);
     /* 
      * Render and flush at first render because blocking input won't allow us 
      * flush buffers
      */
     //gui_menu_render_menu(menu);
 	//sd_unmount();
-
+    haschange = false;
     int res = 1;
 	while (res){
-        res = handle_touch_input(menu);
+        res = handle_touch_input(&menu);
         if (haschange){
-            res = 3;
-            break;
+            haschange = false;
+            gui_menu_render_menu(menu);
+            change_brightness(0);
         }
     }
     minerva_periodic_training();
@@ -237,23 +228,35 @@ void gui_menu_destroy(gui_menu_t *menu)
 }
 
 
-static int handle_touch_input(gui_menu_t *menu)
+static int handle_touch_input(gui_menu_t **menu)
 {
     gui_menu_entry_t *entry = NULL;
     touch_event event = touch_wait();
 
 		if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE){
 			/* After touch input check if any entry has ben tapped */
-			for(int i = 0; i < menu->next_entry; i++)
+			for(int i = 0; i < (*menu)->next_entry; i++)
 			{
-				entry = menu->entries[i];
+				entry = (*menu)->entries[i];
 
-				if (entry->handler != NULL 
-					&& is_rect_touched(&event, entry->x, entry->y, entry->width, entry->height))
+				if (entry->handler != NULL && is_rect_touched(&event, entry->x, entry->y, entry->width, entry->height))
 				{
-                    menu->selected_index = i;
-					if (entry->handler(entry->param) != 0)
-						return 0;
+                    (*menu)->selected_index = i;
+                    if (entry->type == 1){
+                        if (entry->bit){
+                            if (entry->handler(entry->param) != 0)
+                                return 0;
+                        } else {
+                            if (entry->handler2(entry->param2) != 0)
+                                return 0;
+                        }
+                        haschange = true;
+                        entry->bit = !entry->bit;
+                    } else {
+                        if (entry->handler(entry->param) != 0)
+                            return 0;
+                        
+                    }
 				}
 			}
 		}
@@ -281,6 +284,29 @@ void create(gui_menu_t *menu, char *path, int x, int y, int (*handler)(void *), 
 	f_close(&fptr);
 
 	gui_menu_append_entry(menu, gui_create_menu_entry("", buf, x, y, file_info_header.width, file_info_header.height, handler, param));
+    free(buf);
+}
+
+void create_switch(gui_menu_t *menu, const char *name, char *path, char *path2, bool bit, int x, int y, int (*handler)(void *), void *param, int (*handler2)(void *), void *param2)
+{
+	bit_hdr_t file_header;
+	dip_hdr_t file_info_header;
+	FIL fptr;
+	f_open(&fptr, theme(path), FA_READ);
+
+	__off_t size = f_size(&fptr);
+
+	f_read(&fptr, &file_header, sizeof(file_header), NULL);
+	f_read(&fptr, &file_info_header, sizeof(file_info_header), NULL);
+
+	f_lseek(&fptr, 0);
+
+	void *buf = malloc(size);
+	f_read(&fptr, buf, size, NULL);
+
+	f_close(&fptr);
+
+	gui_menu_append_entry(menu, gui_create_menu_entry_switch(name, buf,(u8*)sd_4_file_read2(theme(path2)),bit, x, y, file_info_header.width, file_info_header.height, handler, param, handler2, param2));
     free(buf);
 }
 

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "gui_menu_pool.h"
 #include "power/max17050.h"
 #include <string.h>
 #include "gui_argon_menu.h"
@@ -50,7 +51,7 @@ const char *emuserial;
 char *buffer_blk;
 void upd_menus();
 //menus
-u64 main_menu = 0;
+int main_menu = 0;
 char* imagemenus = "background.bmp";
 
 //low icons Y
@@ -86,9 +87,8 @@ void gui_init_argon_boot(void)
 	change_brightness(0);
 
 	//show display without icons
-	int res = 0;
 	if ((Incac != 1) & (iamsafe != 1)) {
-		res = gui_menu_boot(imagemenus);
+        gui_menu_boot(imagemenus);
 	}
 
 	//if (res > 0){gfx_swap_buffer();}
@@ -148,12 +148,11 @@ void gui_init_argon_boot(void)
 		f_unlink("StarDust/autobootecho.txt");
 	gui_init_argon_menu();
 }
-
+gui_menu_t **menu;
 gui_menu_t *menu_0;
 gui_menu_t *menu_1;
 gui_menu_t *menu_2;
 /*
-gui_menu_t *menu;
 gui_menu_t *menu_3;
 gui_menu_t *menu_4;
 gui_menu_t *menu_5;
@@ -171,7 +170,7 @@ void pre_load_menus(int menus, bool StarUp)
 	SDStrap();
 	if (menus == 0 || StarUp)
 	{
-
+        menu_0->next_entry = 0;
 		//generate main menu
 		u32 main_iconY = 200;
 		u32 main_iconX = 190;
@@ -282,6 +281,7 @@ void pre_load_menus(int menus, bool StarUp)
 		//call menu 1
 		create(menu_0, "Icons/gear.bmp", 1200, low_icons, (int (*)(void *))tool_Menus, (void *)1);
         static_menu_elements(menu_0);
+        create_switch(menu_0, "", "Icons/day.bmp", "Icons/nay.bmp", !sd_file_exists("StarDust/flags/b50.flag"), 1200, 100, (int (*)(void *))medislay, (void *)0, (int (*)(void *))medislay, (void *)0);
 	}
 
 	if (menus == 1 || StarUp)
@@ -289,6 +289,7 @@ void pre_load_menus(int menus, bool StarUp)
 		static int start_point = 0;
 		if (menu_1->next_entry == 0 || StarUp)
 		{
+            menu_1->next_entry = 0;
 			//list custom skins
 			AThemes_list(menu_1, 80, 90);
             
@@ -421,14 +422,19 @@ void pre_load_menus(int menus, bool StarUp)
 */
 
 		//Ajustar brillo
+        
+        create_switch(menu_1, "", "Icons/day.bmp", "Icons/nay.bmp", !sd_file_exists("StarDust/flags/b50.flag"), 1200, 100, (int (*)(void *))medislay, (void *)0, (int (*)(void *))medislay, (void *)0);
+        /*
 		if (!sd_file_exists("StarDust/flags/b50.flag"))
 			create(menu_1, "Icons/day.bmp", 1200, 100, (int (*)(void *))medislay, (void *)0);
 		else
 			create(menu_1, "Icons/nay.bmp", 1200, 100, (int (*)(void *))medislay, (void *)0);
+        */
 	}
 
 	if (menus == 2)
 	{
+        menu_2->next_entry = 0;
 
 		//		incognito togle
 		//Getinfo from text
@@ -615,14 +621,15 @@ void pre_load_menus(int menus, bool StarUp)
 void gui_init_argon_menu(void)
 {
     //Iinit Menus
+    //gui_menu_pool_init();
     upd_menus();
-	pre_load_menus(0, 1);
-    
+	//pre_load_menus(0, 1);
 
 	//main menu loop
     while(true){
         change_brightness(0);
         SDStrap();
+
         switch (main_menu)
         {
             case 0:
@@ -630,7 +637,7 @@ void gui_init_argon_menu(void)
             {
                 if (menu_0->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                gui_menu_open(menu_0);
+                (*menu) = menu_0;
             }
             break;
 
@@ -638,7 +645,7 @@ void gui_init_argon_menu(void)
             {
                 if (menu_1->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                gui_menu_open(menu_1);
+                (*menu) = menu_1;
             }
             break;
 
@@ -646,16 +653,17 @@ void gui_init_argon_menu(void)
             {
                 if (menu_2->next_entry == 0)
                     pre_load_menus(main_menu, 0);
-                gui_menu_open(menu_2);
+                (*menu) = menu_2;
+
             }
             break;
         }
-        //gui_menu_push_to_pool((void*)menu);
-
+        
         //static_menu_elements(menu);
         /* Start menu_1 */
+        gui_menu_open((*menu));
+
         
-        //gui_menu_open(menu);
         /*
         gfx_con_setpos( 160, 50);
         gfx_printf( "end off menu \n");
@@ -666,7 +674,7 @@ void gui_init_argon_menu(void)
     return;
 }
 
-int static_menu_elements(gui_menu_t *menu)
+int static_menu_elements(gui_menu_t *menut)
 {
 		//create(menu, "/StarDust/skins/xbox/Icons/home.bmp", 10, low_icons, (int (*)(void *))tool_Menus, (void *)0);
 /*
@@ -676,7 +684,7 @@ int static_menu_elements(gui_menu_t *menu)
 */
 		
 
-	gui_menu_append_entry(menu, gui_create_menu_entry("", NULL, 0, 0, 35, 35, (int (*)(void *))screenshot, NULL));
+	gui_menu_append_entry(menut, gui_create_menu_entry("", NULL, 0, 0, 35, 35, (int (*)(void *))screenshot, NULL));
 
 	//battery
 	u32 battPercent = 0;
@@ -685,15 +693,15 @@ int static_menu_elements(gui_menu_t *menu)
 	u32 batY = 5;
 	u32 batX = 1200;
 	if ((battimgper <= 100) & (battimgper >= 76))
-		create(menu, "Icons/bat1.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
+		create(menut, "Icons/bat1.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
 	if ((battimgper <= 75) & (battimgper >= 51))
-		create(menu, "Icons/bat2.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
+		create(menut, "Icons/bat2.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
 	if ((battimgper <= 50) & (battimgper >= 26))
-		create(menu, "Icons/bat3.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
+		create(menut, "Icons/bat3.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
 	if ((battimgper <= 25) & (battimgper >= 5))
-		create(menu, "Icons/bat4.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
+		create(menut, "Icons/bat4.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
 	if (battimgper <= 4)
-		create(menu, "Icons/bat5.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
+		create(menut, "Icons/bat5.bmp", batX, batY, (int (*)(void *))bat_show, (void *)battimgper);
 	return 0;
 }
 
@@ -914,8 +922,8 @@ int tool_servises_on(char *title)
 		strcat(path, "/boot2.flag");
 		sd_save_2_file("", 0, path);
 	}
-	pre_load_menus(1, 0);
-    return 1;
+	//pre_load_menus(1, 0);
+    return 0;
 }
 
 int tool_servises_off(char *title)
@@ -937,8 +945,8 @@ int tool_servises_off(char *title)
 		strcat(path, "/flags/boot2.flag");
 		f_unlink(path);
 	}
-	pre_load_menus(1, 0);
-    return 1;
+	//pre_load_menus(1, 0);
+    return 0;
 }
 
 //Themes ON
@@ -997,7 +1005,7 @@ int tool_Themes_off(char *cfw)
 		f_unlink("atmosphere/contents/0100000000001000/fsmitm.flag");
 	}
 	pre_load_menus(1, 0);
-    return 1;
+    return 0;
 }
 
 //safe boot
@@ -1090,7 +1098,7 @@ int serv_CFW(int cfw)
     return 1;
 }
 
-void serv_display(gui_menu_t *menu, char *titleid, char *name)
+void serv_display(gui_menu_t *menut, char *titleid, char *name)
 {
 	SDStrap();
 	static u32 servYF = 250;
@@ -1126,16 +1134,20 @@ void serv_display(gui_menu_t *menu, char *titleid, char *name)
 
 	if (!sd_file_exists(path))
 		return;
-
+/*
 	if (sd_file_exists(flagpath))
 	{
-		create(menu, "Icons/sw-on.bmp", servX, servY, (int (*)(void *))tool_servises_off, (void *)titleid);
+		create(menut, "Icons/sw-on.bmp", servX, servY, (int (*)(void *))tool_servises_off, (void *)titleid);
 	}
 	else
 	{
-		create(menu, "Icons/sw-off.bmp", servX, servY, (int (*)(void *))tool_servises_on, (void *)titleid);
+		create(menut, "Icons/sw-off.bmp", servX, servY, (int (*)(void *))tool_servises_on, (void *)titleid);
 	}
-	gui_menu_append_entry(menu, gui_create_menu_entry_no_bitmap(name, servX + 30, servY + 30, 150, 100, NULL, NULL));
+	gui_menu_append_entry(menut, gui_create_menu_entry_no_bitmap(name, servX + 30, servY + 30, 150, 100, NULL, NULL));
+    */
+    create_switch(menut, name, "Icons/sw-on.bmp", "Icons/sw-off.bmp", sd_file_exists(flagpath), servX, servY, (int (*)(void *))tool_servises_off, (void *)titleid, (int (*)(void *))tool_servises_on, (void *)titleid);
+
+    
 	servstep++;
 	if (servstep % 2 == 0)
 	{
@@ -1197,7 +1209,7 @@ int Autoboot(u32 fil){
 	return 1;
 };
 
-int AThemes_list(gui_menu_t *menu, u32 gridX, u32 gridY){
+int AThemes_list(gui_menu_t *menut, u32 gridX, u32 gridY){
 	//generate themes Dinamy
 	u32 tm_ajust = 90;
 	char *folder = listfol("StarDust/skins", "*", true);
@@ -1217,7 +1229,7 @@ int AThemes_list(gui_menu_t *menu, u32 gridX, u32 gridY){
 			strcat(source_icon, "icon.bmp");
 			if (sd_file_exists(source_icon))
 			{
-				gui_menu_append_entry(menu, gui_create_menu_entry("", sd_4_file_read2(source_icon), gridX, gridY, 70, 70, (int (*)(void *))tool_theme, (void *)source_fol));
+				gui_menu_append_entry(menut, gui_create_menu_entry("", sd_4_file_read2(source_icon), gridX, gridY, 70, 70, (int (*)(void *))tool_theme, (void *)source_fol));
 				gridX = gridX + tm_ajust;
 			}
 			w++;
@@ -1236,8 +1248,9 @@ int medislay(char *flags){
 		f_unlink("StarDust/flags/b50.flag");
 	else
 		sd_save_2_file("", 0, "StarDust/flags/b50.flag");
-	pre_load_menus(1, 0);
-    return 1;
+	//pre_load_menus(1, 0);
+    change_brightness(0);
+    return 0;
 }
 /**/
 
