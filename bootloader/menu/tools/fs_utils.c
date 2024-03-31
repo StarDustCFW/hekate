@@ -71,65 +71,118 @@ bool delete_file(const char* filename) {
 }
 void *sd_4_file_read2(const char *path)
 {
-	FIL fp;
-	if (f_open(&fp, path, FA_READ) != FR_OK)
-		return NULL;
+    FIL fp;
+    if (f_open(&fp, path, FA_READ) != FR_OK)
+        return NULL;  // Error al abrir el archivo, retorna NULL
 
-	u32 size = f_size(&fp);
-	void *buf = malloc(size);
+    u32 size = f_size(&fp);
+    void *buf = malloc(size + 1);  // Tamaño del buffer más un byte para el carácter nulo
+    if (!buf)
+    {
+        f_close(&fp);  // Cierra el archivo antes de salir
+        return NULL;   // Error de asignación de memoria, retorna NULL
+    }
 
-	u8 *ptr = buf;
-	while (size > 0)
-	{
-		u32 rsize = MIN(size, 512 * 512);
-		if (f_read(&fp, ptr, rsize, NULL) != FR_OK)
-		{
-			free(buf);
-			return NULL;
-		}
+    u8 *ptr = buf;
+    while (size > 0)
+    {
+        u32 rsize = MIN(size, 512 * 512);
+        UINT br;
+        if (f_read(&fp, ptr, rsize, &br) != FR_OK || br != rsize)
+        {
+            free(buf);     // Libera la memoria antes de salir
+            f_close(&fp);  // Cierra el archivo antes de salir
+            return NULL;   // Error al leer o tamaño incorrecto, retorna NULL
+        }
 
-		ptr += rsize;
-		size -= rsize;
-	}
+        ptr += rsize;
+        size -= rsize;
+    }
 
-	f_close(&fp);
+    *ptr = '\0';  // Agrega el carácter nulo al final del buffer
+    f_close(&fp); // Cierra el archivo después de leer
 
-	return buf;
+    return buf;
 }
 
-char *read_file_string(char *path)
+char *read_file_string(const char *path)
 {
-	FIL file;
-	f_open(&file, path, FA_READ);
-	FILINFO stats;
+    FIL file;
+    FILINFO stats;
+    FRESULT res;
+    unsigned int size;
 
-	f_stat(path, &stats);
-	unsigned int size = stats.fsize;
+    res = f_open(&file, path, FA_READ);
+    if (res != FR_OK)
+    {
+        // Manejo de error al abrir el archivo
+        // Puedes imprimir un mensaje de error o registrar el problema
+        return NULL;
+    }
 
-	char *buff = malloc(size + 1);
-	buff[size] = '\0';
-	f_read(&file, buff, size, &size);
+    res = f_stat(path, &stats);
+    if (res != FR_OK)
+    {
+        // Manejo de error al obtener información del archivo
+        f_close(&file);  // Cerrar el archivo antes de salir
+        return NULL;
+    }
 
-	f_close(&file);
-	return buff;
+    size = stats.fsize;
+    char *buff = malloc(size + 1);  // Reserva memoria para el contenido más el carácter nulo
+    if (!buff)
+    {
+        // Manejo de error al asignar memoria
+        f_close(&file);  // Cerrar el archivo antes de salir
+        return NULL;
+    }
+
+    res = f_read(&file, buff, size, &size);
+    if (res != FR_OK)
+    {
+        // Manejo de error al leer el archivo
+        free(buff);       // Liberar memoria antes de salir
+        f_close(&file);   // Cerrar el archivo antes de salir
+        return NULL;
+    }
+
+    buff[size] = '\0';  // Agrega el carácter nulo al final de la cadena
+    f_close(&file);     // Cierra el archivo después de leer
+
+    return buff;
 }
 
 int sd_save_2_file(void *buf, u32 size, const char *filename)
 {
-	FIL fp;
-	u32 res = 0;
-	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
-	if (res)
-	{
-        gfx_printf( "%kError (%d) creating file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
-		return 1;
-	}
+    FIL fp;
+    FRESULT res;
 
-	f_sync(&fp);
-	f_write(&fp, buf, size, NULL);
-	f_close(&fp);
+    // Intenta abrir el archivo en modo de creación siempre y escritura
+    res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
+    if (res != FR_OK)
+    {
+        gfx_printf("%kError (%d) creating file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
+        return 1;
+    }
 
-	return 0;
+    // Escribe el contenido en el archivo
+    res = f_write(&fp, buf, size, NULL);
+    if (res != FR_OK)
+    {
+        gfx_printf("%kError (%d) writing to file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
+        f_close(&fp);  // Cerrar el archivo antes de salir
+        return 2;
+    }
+
+    // Cierra el archivo después de escribir
+    res = f_close(&fp);
+    if (res != FR_OK)
+    {
+        gfx_printf("%kError (%d) closing file\n%s.\n%k\n", 0xFFFFDD00, res, filename, 0xFFCCCCCC);
+        return 3;
+    }
+
+    return 0;  // Todo salió bien
 }
 
 bool sd_file_exists(const char* filename)
@@ -167,18 +220,47 @@ bool sd_file_size(char *path)
 
 void copyfile(const char* source, const char* target)
 {
-    FIL fp;
-    if (f_open(&fp, source, FA_READ) != FR_OK)
+    FIL fp_source, fp_target;
+    FRESULT res;
+
+    // Abrir el archivo de origen para lectura
+    res = f_open(&fp_source, source, FA_READ);
+    if (res != FR_OK)
     {
-        gfx_printf( "file %s mising\n",source);
+        gfx_printf("File %s missing\n", source);
         gfx_swap_buffer();
-        //msleep(3000);
-	}else{
-        u32 size = f_size(&fp);
-        f_close(&fp);
-        sd_save_2_file(sd_4_file_read2(source),size,target);
-	}
+        return;  // Salir si no se puede abrir el archivo de origen
+    }
+
+    // Abrir el archivo de destino para escritura (crear si no existe)
+    res = f_open(&fp_target, target, FA_CREATE_ALWAYS | FA_WRITE);
+    if (res != FR_OK)
+    {
+        gfx_printf("Error creating file %s\n", target);
+        gfx_swap_buffer();
+        f_close(&fp_source);  // Cerrar archivo de origen antes de salir
+        return;  // Salir si no se puede crear el archivo de destino
+    }
+
+    // Leer y escribir datos del archivo de origen al archivo de destino
+    static uint8_t buf[512];  // Buffer temporal para la lectura/escritura
+    UINT bytes_read, bytes_written;
+    while (f_read(&fp_source, buf, sizeof(buf), &bytes_read) == FR_OK && bytes_read > 0)
+    {
+        f_write(&fp_target, buf, bytes_read, &bytes_written);
+        if (bytes_written != bytes_read)
+        {
+            gfx_printf("Error writing to file %s\n", target);
+            gfx_swap_buffer();
+            break;  // Salir si hay un error al escribir
+        }
+    }
+
+    // Cerrar los archivos después de la operación de copia
+    f_close(&fp_source);
+    f_close(&fp_target);
 }
+
 
 void copyfileparam(char* param, char* source, char* target)
 {
@@ -411,29 +493,52 @@ bool HasArchBit(const char *directory)
 
 void Killflags(char *directory)
 {
-	gfx_con_setpos( 1, 10);
-	printerCU(directory,"",2);
-	f_chmod(directory, 0, AM_RDO | AM_ARC);
-    if (strstr(directory, "//") != NULL){
+    FRESULT res;
+    DIR dir;
+    static FILINFO fno;
+    char *folder = NULL;
+
+    res = f_opendir(&dir, directory);
+    if (res != FR_OK)
         return;
-    }
-    
-    char* folder = listfol(directory, "*", true);
+
+    res = f_readdir(&dir, &fno);
+    if (res != FR_OK || fno.fname[0] == 0)
+        goto close_dir;
+
+    gfx_con_setpos(1, 10);
+    printerCU(directory, "", 2);
+    f_chmod(directory, 0, AM_ARC);
+    if (strstr(directory, "//") != NULL)
+        goto close_dir;
+
+    folder = listfol(directory, "*", true);
+    if (!folder)
+        goto close_dir;
+
     u32 r = 0;
-    while(folder[r * 256])
+    while (folder[r * 256] != 0)
     {
-		char* folderpath = (char*)malloc(256);
-			if((strlen(&folder[r * 256]) <= 200) & (strlen(&folder[r * 256]) > 1))
-			{		
-				strcpy(folderpath, directory);
-				strcat(folderpath, "/");
-				strcat(folderpath, &folder[r * 256]);
-                if (strstr(directory, "//") != NULL) return;
-				Killflags(folderpath);
-			}
-	r++;
+        char *folderpath = (char *)malloc(256);
+        if (!folderpath)
+            break;  // Error de asignación de memoria
+
+        if ((strlen(&folder[r * 256]) <= 200) && (strlen(&folder[r * 256]) > 1))
+        {
+            strcpy(folderpath, directory);
+            strcat(folderpath, "/");
+            strcat(folderpath, &folder[r * 256]);
+            Killflags(folderpath);
+        }
+        free(folderpath); // Liberar memoria dentro del bucle
+        r++;
     }
+
+close_dir:
+    free(folder);  // Liberar memoria de folder
+    f_closedir(&dir);
 }
+
 
 char *listfol(const char *directory, const char *pattern, bool includeHiddenFiles)
 {

@@ -68,7 +68,7 @@ static void gui_menu_draw_background(gui_menu_t *menu)
         {
             char *str;
             void *buf;
-            buf = sd_4_file_read2("StarDust/StarDustV.txt");
+            buf = read_file_string("StarDust/StarDustV.txt");
             str = buf;
             if (strlen(str)!=0)
             {
@@ -182,7 +182,7 @@ int gui_menu_boot(char* imagemenus)
 			//if (sd_mount())
             {
 				void *buf;
-				buf = sd_4_file_read2("StarDust/autobootecho.txt");
+				buf = read_file_string("StarDust/autobootecho.txt");
 				str = buf;
 				Sversion[0] = str[0];
 				Sversion[1] = str[1];

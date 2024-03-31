@@ -185,7 +185,7 @@ void pre_load_menus(int menuses, bool StarUp)
 		u32 buttonY = main_iconY - 67;
 		if (sd_file_exists("emummc/emummc.ini"))
 		{
-			char *str = sd_4_file_read2("emummc/emummc.ini");
+			char *str = read_file_string("emummc/emummc.ini");
 			u32 count = strlen(str)-1;
 			if (str[count] != '\n'){
 				while (true) {
@@ -460,7 +460,7 @@ void pre_load_menus(int menuses, bool StarUp)
 		{
 			if (sd_file_exists("atmosphere/config/exosphere.ini"))
 			{
-				void *buf = sd_4_file_read2("atmosphere/config/exosphere.ini");
+				void *buf = read_file_string("atmosphere/config/exosphere.ini");
 				buffer_blk = buf;
 			}
 			if (strstr(buffer_blk, "blank_prodinfo_emummc=1") != NULL)
@@ -481,7 +481,7 @@ void pre_load_menus(int menuses, bool StarUp)
 					Incognito("1");
 				}
 
-				void *buf = sd_4_file_read2("StarDust/emunand_serial.txt");
+				void *buf = read_file_string("StarDust/emunand_serial.txt");
 				emuserial = buf;
 
 				if (strstr(emuserial, "XAW0000000000") != NULL)
@@ -547,14 +547,14 @@ void pre_load_menus(int menuses, bool StarUp)
 			if (sd_file_exists("StarDust/sysnand_serial.txt"))
 			{
 
-				void *buf = sd_4_file_read2("StarDust/sysnand_serial.txt");
+				void *buf = read_file_string("StarDust/sysnand_serial.txt");
 				sysserial = buf;
 				if (strstr(sysserial, "XAW0000000000") != NULL)
 					sys_inc = 1;
 
 				if (sd_file_exists("emummc/emummc.ini"))
 				{
-					void *buf = sd_4_file_read2("StarDust/emunand_serial.txt");
+					void *buf = read_file_string("StarDust/emunand_serial.txt");
 					emuserial = buf;
 				}
 				else
@@ -826,7 +826,7 @@ int tool_emu(u32 status)
 
 	if (status == 1)
 	{
-		char *str1 = sd_4_file_read2("emummc/emummc.ini");
+		char *str1 = read_file_string("emummc/emummc.ini");
 		char *payload_wo_bin = str_replace(str1, "enabled=0", "enabled=1");
 		FIL op;
 		f_open(&op, "emummc/emummc.ini", FA_READ);
@@ -846,7 +846,7 @@ int tool_emu(u32 status)
 
 	if (status == 0)
 	{
-		char *str1 = sd_4_file_read2("emummc/emummc.ini");
+		char *str1 = read_file_string("emummc/emummc.ini");
 		char *payload_wo_bin = str_replace(str1, "enabled=1", "enabled=0");
 		FIL op;
 		f_open(&op, "emummc/emummc.ini", FA_READ);
