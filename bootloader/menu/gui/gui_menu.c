@@ -35,7 +35,7 @@ static void gui_menu_draw_entries(gui_menu_t*);
 //static int gui_menu_update(gui_menu_t*);
 
 /* Handle input */
-static int handle_touch_input(gui_menu_t**);
+static int handle_touch_input(gui_menu_t*);
 extern u32 isAMS;
 gui_menu_t *gui_menu_create(const char *title,char *back)
 {
@@ -46,17 +46,6 @@ gui_menu_t *gui_menu_create(const char *title,char *back)
 	menu->selected_index = 0;
     //gui_menu_push_to_pool((void*)menu);
 	return menu;
-}
-bool gui_menu_update(gui_menu_t **menu,char *back)
-{
-    if ((*menu) == NULL)
-    {
-        (*menu) = gui_menu_create("ArgonNX",back);
-        return 0;
-    }
-    gui_menu_destroy((*menu));
-    (*menu) = gui_menu_create("ArgonNX",back);
-	return 1;
 }
 
 void gui_menu_append_entry(gui_menu_t *menu, gui_menu_entry_t *menu_entry)
@@ -155,7 +144,7 @@ int gui_menu_open(gui_menu_t *menu)
     haschange = false;
     int res = 1;
 	while (res){
-        res = handle_touch_input(&menu);
+        res = handle_touch_input(menu);
         if (haschange){
             haschange = false;
             gui_menu_render_menu(menu);
@@ -220,38 +209,43 @@ int gui_menu_boot(char* imagemenus)
 
 void gui_menu_destroy(gui_menu_t *menu)
 {
-	for (int i = 0; i < menu->next_entry; i++)
-		gui_menu_entry_destroy(menu->entries[i]);
-    custom_gui_end(menu->custom_gui);
-	//free(menu->entries);
-	free(menu);
+    if (menu != NULL) {
+        for (int i = 0; i < menu->next_entry; i++)
+            gui_menu_entry_destroy(menu->entries[i]);
+        custom_gui_end(menu->custom_gui);
+        //free(menu->entries);
+        free(menu);
+    }
 }
 
 
-static int handle_touch_input(gui_menu_t **menu)
+static int handle_touch_input(gui_menu_t *menu)
 {
     gui_menu_entry_t *entry = NULL;
     touch_event event = touch_wait();
 
 		if (event.type == STMFTS_EV_MULTI_TOUCH_LEAVE){
 			/* After touch input check if any entry has ben tapped */
-			for(int i = 0; i < (*menu)->next_entry; i++)
+			for(int i = 0; i < menu->next_entry; i++)
 			{
-				entry = (*menu)->entries[i];
+				entry = menu->entries[i];
 
 				if (entry->handler != NULL && is_rect_touched(&event, entry->x, entry->y, entry->width, entry->height))
 				{
-                    (*menu)->selected_index = i;
+                    menu->selected_index = i;
                     if (entry->type == 1){
+                        
                         if (entry->bit){
+                            entry->bit = !entry->bit;
                             if (entry->handler(entry->param) != 0)
                                 return 0;
                         } else {
+                            entry->bit = !entry->bit;
                             if (entry->handler2(entry->param2) != 0)
                                 return 0;
                         }
-                        haschange = true;
-                        entry->bit = !entry->bit;
+                        //haschange = true;
+                        
                     } else {
                         if (entry->handler(entry->param) != 0)
                             return 0;

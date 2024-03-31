@@ -69,7 +69,6 @@ void *theme(char *path);
 
 /* Allocate menu to heap */
 gui_menu_t *gui_menu_create(const char *title,char *back);
-bool gui_menu_update(gui_menu_t **menu,char *back);
 
 /* Add an entry to menu */
 void gui_menu_append_entry(gui_menu_t *menu, gui_menu_entry_t *menu_entry);
