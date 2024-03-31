@@ -5,6 +5,7 @@
 #include "libs/fatfs/ff.h"
 #include "storage/sdmmc.h"
 #include "storage/sdmmc_driver.h"
+#include "utils/sprintf.h"
 
 extern sdmmc_t g_sd_sdmmc;
 extern sdmmc_storage_t g_sd_storage;
