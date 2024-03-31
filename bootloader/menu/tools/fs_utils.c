@@ -466,46 +466,54 @@ void copyarall(char *directory, char *destdir, char *filet, char *coment) {
 }
 
 //folder delete use with care
-void deleteall(char* directory, char* filet, char* coment)
-{
-if (!sd_file_exists(directory)) return;
-char* files = listfil(directory, filet, true);
-char* folder = listfol(directory, "*", true);
+void deleteall(char *directory, char *filet, char *coment) {
+    if (!sd_file_exists(directory)) return;
+
+    char *files = listfil(directory, filet, true);
+    char *folder = listfol(directory, "*", true);
+    
+    if (!files || !folder) return;  // Verificar si se pudo obtener la lista de archivos y carpetas
+
     u32 i = 0;
-    while(files[i * 256])
-    {
-char* destfile = (char*)malloc(256);
-			if(strlen(&files[i * 256]) <= 100){			
-			strcpy(destfile, "\0");
-			strcat(destfile, directory);
-			strcat(destfile, "/");
-			strcat(destfile, &files[i * 256]);
-			if(strlen(coment) > 0){
-				printerCU(destfile,coment,2);
-			} else {
-				printerCU(destfile,"",2);
-			}
-				
-			f_unlink(destfile);
-			}
-	i++;
+    while (files[i * 256]) {
+        char destfile[256];
+        
+        // Construir ruta completa del archivo a eliminar
+        s_printf(destfile, "%s/%s", directory, &files[i * 256]);
+        
+        if (strlen(coment) > 0) {
+            printerCU(destfile, coment, 2);
+        } else {
+            printerCU(destfile, "", 2);
+        }
+        
+        // Eliminar el archivo
+        f_unlink(destfile);
+        
+        i++;
     }
 
+    free(files);  // Liberar memoria asignada para la lista de archivos
+
     u32 r = 0;
-    while(folder[r * 256])
-    {
-char* folderpath = (char*)malloc(256);
-			if((strlen(&folder[r * 256]) <= 100) & (strlen(&folder[r * 256]) > 0)){			
-			strcpy(folderpath, "\0");
-			strcat(folderpath, directory);
-			strcat(folderpath, "/");
-			strcat(folderpath, &folder[r * 256]);
-			deleteall(folderpath, filet,coment);
-			}
-	r++;
+    while (folder[r * 256]) {
+        char folderpath[256];
+        
+        // Construir ruta completa de la carpeta a eliminar
+        s_printf(folderpath, "%s/%s", directory, &folder[r * 256]);
+        
+        // Llamar recursivamente para eliminar contenido de las subcarpetas
+        deleteall(folderpath, filet, coment);
+        
+        r++;
     }
-f_unlink(directory);
+
+    free(folder);  // Liberar memoria asignada para la lista de carpetas
+
+    // Eliminar la carpeta original después de eliminar su contenido
+    f_unlink(directory);
 }
+
 
 bool HasArchBit(const char *directory)
 {
