@@ -325,7 +325,7 @@ void moverall(char* directory, char* destdir, char* filet, char* coment){
     u32 i = 0;
     while(files[i * 256])
     {
-		if(strlen(&files[i * 256]) <= 100){		
+		if(strlen(&files[i * 256]) <= 250){		
             char* sourcefile = (char*)malloc(256);
 			strcpy(sourcefile, "\0");
 			strcat(sourcefile, directory);
@@ -352,7 +352,7 @@ void moverall(char* directory, char* destdir, char* filet, char* coment){
     u32 r = 0;
     while(folder[r * 256])
     {
-		if((strlen(&folder[r * 256]) <= 100) & (strlen(&folder[r * 256]) > 0)){			
+		if((strlen(&folder[r * 256]) <= 250) & (strlen(&folder[r * 256]) > 0)){			
             char* folderpath = (char*)malloc(256);
 			strcpy(folderpath, "\0");
 			strcat(folderpath, directory);
@@ -395,7 +395,7 @@ f_mkdir(destdir);
     u32 i = 0;
     while(files[i * 256])
     {
-		if(strlen(&files[i * 256]) <= 100){	
+		if(strlen(&files[i * 256]) <= 100){
             char* sourcefile = (char*)malloc(256);
 			strcpy(sourcefile, "\0");
 			strcat(sourcefile, directory);
@@ -486,8 +486,6 @@ char* folder = listfol(directory, "*", true);
     }
 f_unlink(directory);
 }
-
-
 
 bool HasArchBit(const char *directory)
 {

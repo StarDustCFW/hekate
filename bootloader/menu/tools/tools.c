@@ -250,8 +250,8 @@ void BootStrapNX()
 
 void printerCU(char *text,const char *title,int clean)
 {
-		static char titw[999] = "-.-";
-		static char buff[999] = "\0";
+		static char titw[9999] = "-.-";
+		static char buff[9999] = "\0";
 		static int count = 0;
 		if(strlen(title) <= 0){
 			title=titw;
@@ -261,18 +261,21 @@ void printerCU(char *text,const char *title,int clean)
 		if (clean == 1){
 			count = 0;
 			strcpy(buff, "\0");
+			strcpy(buff, "");
 			strcpy(titw, "\0");
+			strcpy(titw, "");
 			return;
 		}
 		if (clean != 2) gfx_swap_buffer();
 		
-		gfx_con.scale = 3;
+		gfx_con.fntsz = 16;
 		gfx_con_setpos( 10, 5);
 		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
 		gfx_printf( "%s\n",title);
 		gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
-		gfx_con.scale = 2;
+		gfx_con.fntsz = 8;
 		gfx_printf( "%s\n",buff);
+		gfx_con.fntsz = 16;
 		//gfx_printf( "\n->%s<-\n",text);
 		gfx_swap_buffer();
 		if (clean > 100){msleep(clean);clean=2;}
@@ -286,6 +289,7 @@ void printerCU(char *text,const char *title,int clean)
 			{
 				count = 0;
 				strcpy(buff, "\0");
+				strcpy(buff, "");
                 gfx_clear_buffer();
 			}
 			if(strlen(text) > 0){
