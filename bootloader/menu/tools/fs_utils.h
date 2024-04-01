@@ -20,7 +20,7 @@ int sd_save_2_file(void *buf, u32 size,const  char *filename);
 bool sd_file_exists(const char* filename);
 void copyfile(const char* source, const char* target);
 void copyfileparam(char* param, char* source, char* target);
-void copy_folder(const char* sourse_folder, const char* dest_folder);
+void copy_folder(char* sourse_folder, char* dest_folder);
 bool sd_file_size(char *path);
 
 void moverall(char *directory, char *destdir, char *filet, char *coment);

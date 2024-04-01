@@ -11,7 +11,7 @@ IPL_MAGIC := 0x43544349 #"ICTC"
 include ./Versions.inc
 
 ################################################################################
-BUILD_VER := 1
+BUILD_VER := 3
 TARGET := payload
 BUILDDIR := build
 OUTPUTDIR := output

@@ -288,116 +288,90 @@ void copyfileparam(char* param, char* source, char* target)
 	}
 }
 
-void copy_folder(const char* source_folder, const char* dest_folder)
-{
-    if (!sd_file_exists(source_folder))
-    {
-        gfx_printf("Source folder %s does not exist.\n", source_folder);
-        gfx_swap_buffer();
-        return;
-    }
-
-    char* files = listfil(source_folder, "*", true);
-    if (!files)
-    {
-        gfx_printf("Error listing files in source folder.\n");
-        gfx_swap_buffer();
-        return;
-    }
-
+void copy_folder(char* sourse_folder, char* dest_folder){
+    if (!sd_file_exists(sourse_folder)) return;
+    char* Files = listfil(sourse_folder, "*", true);
     u32 i = 0;
-    while (files[i * 256])
+    while(Files[i * 256])
     {
-        char* source_file = (char*)malloc(256);
-        char* dest_file = (char*)malloc(256);
-        if (!source_file || !dest_file)
-        {
-            gfx_printf("Memory allocation error.\n");
-            gfx_swap_buffer();
-            free(files);
-            free(source_file);
-            free(dest_file);
-            return;
-        }
-
-        if (strlen(&files[i * 256]) <= 100)
-        {
-            strcpy(source_file, source_folder);
+        if(strlen(&Files[i * 256]) <= 100){
+            char* source_file = (char*)malloc(256);
+            strcpy(source_file, sourse_folder);
             strcat(source_file, "/");
-            strcat(source_file, &files[i * 256]);
-
+            strcat(source_file, &Files[i * 256]);
+	
+            char* dest_file = (char*)malloc(256);
             strcpy(dest_file, dest_folder);
             strcat(dest_file, "/");
-            strcat(dest_file, &files[i * 256]);
-
-            gfx_printf("\nCopying %s to %s\n", source_file, dest_file);
-            gfx_swap_buffer();
-
-            copyfile(source_file, dest_file); // Llama a tu función de copia de archivos
-
+            strcat(dest_file, &Files[i * 256]);
+            gfx_con_setpos(10, 90);
+            gfx_printf("\ncopy %s to %s\n",source_file,dest_file);
+            copyfile(source_file,dest_file);//action
             free(source_file);
             free(dest_file);
         }
-
         i++;
     }
-
-    free(files);
+    free(Files);
 }
 
 
 //move code
-void moverall(char *directory, char *destdir, char *filet, char *coment) {
+void moverall(char* directory, char* destdir, char* filet, char* coment){
     if (!sd_file_exists(directory)) return;
-
-    char *files = listfil(directory, filet, true);
-    char *folder = listfol(directory, "*", true);
-    
-    if (!files || !folder) return;  // Verificar si se pudo obtener la lista de archivos y carpetas
-    
-    f_mkdir(destdir);  // Crear directorio de destino si no existe
-    
+    char* files = listfil(directory, filet, true);
+    char* folder = listfol(directory, "*", true);
+    f_mkdir(destdir);
     u32 i = 0;
-    while (files[i * 256]) {
-        char sourcefile[256];
-        char destfile[256];
-        
-        // Construir rutas de origen y destino
-        s_printf(sourcefile, "%s/%s", directory, &files[i * 256]);
-        s_printf(destfile, "%s/%s", destdir, &files[i * 256]);
-        
-        if (strlen(coment) > 0) {
-            printerCU(destfile, coment, 0);
-        }
-        
-        // Eliminar archivo de destino si existe
-        if (sd_file_exists(destfile)) {
-            f_unlink(destfile);
-        }
-        
-        // Renombrar archivo de origen a destino
-        f_rename(sourcefile, destfile);
-        
-        i++;
+    while(files[i * 256])
+    {
+		if(strlen(&files[i * 256]) <= 100){		
+            char* sourcefile = (char*)malloc(256);
+			strcpy(sourcefile, "\0");
+			strcat(sourcefile, directory);
+			strcat(sourcefile, "/");
+			strcat(sourcefile, &files[i * 256]);
+			
+            char* destfile = (char*)malloc(256);
+			strcpy(destfile, "\0");
+			strcat(destfile, destdir);
+			strcat(destfile, "/");
+			strcat(destfile, &files[i * 256]);
+			if(strlen(coment) > 0){
+				printerCU(destfile,coment,0);
+			}
+			f_unlink(destfile);
+			f_rename(sourcefile,destfile);
+            free(sourcefile);
+            free(destfile);
+		}
+	i++;
     }
+    free(files);  // Liberar memoria asignada para la lista de archivos
 
     u32 r = 0;
-    while (folder[r * 256]) {
-        char folderpath[256];
-        char folderdest[256];
-        
-        // Construir rutas de origen y destino para carpetas
-        s_printf(folderpath, "%s/%s", directory, &folder[r * 256]);
-        s_printf(folderdest, "%s/%s", destdir, &folder[r * 256]);
-        
-        moverall(folderpath, folderdest, filet, coment);  // Llamar recursivamente para mover contenido de carpetas
-        
-        r++;
-    }
+    while(folder[r * 256])
+    {
+		if((strlen(&folder[r * 256]) <= 100) & (strlen(&folder[r * 256]) > 0)){			
+            char* folderpath = (char*)malloc(256);
+			strcpy(folderpath, "\0");
+			strcat(folderpath, directory);
+			strcat(folderpath, "/");
+			strcat(folderpath, &folder[r * 256]);
 
-    // Liberar memoria asignada dinámicamente
-    free(files);
-    free(folder);
+            char* folderdest = (char*)malloc(256);
+			strcpy(folderdest, "\0");
+			strcat(folderdest, destdir);
+			strcat(folderdest, "/");
+			strcat(folderdest, &folder[r * 256]);
+
+			moverall(folderpath, folderdest, filet, coment);
+            free(folderpath);
+            free(folderdest);
+		}
+	r++;
+    }
+    free(folder);  // Liberar memoria asignada para la lista de carpetas
 }
 
 //move
@@ -411,108 +385,108 @@ void f_move (char* file1, char* file2)
 	}
 }
 
-//copy code
-void copyarall(char *directory, char *destdir, char *filet, char *coment) {
-    if (!sd_file_exists(directory)) return;
 
-    char *files = listfil(directory, filet, true);
-    char *folder = listfol(directory, "*", true);
-    
-    if (!files || !folder) return;  // Verificar si se pudo obtener la lista de archivos y carpetas
-    
-    f_mkdir(destdir);  // Crear directorio de destino si no existe
-    
+//copy code
+void copyarall(char* directory, char* destdir, char* filet, char* coment){
+if (!sd_file_exists(directory)) return;
+char* files = listfil(directory, filet, true);
+char* folder = listfol(directory, "*", true);
+f_mkdir(destdir);
     u32 i = 0;
-    while (files[i * 256]) {
-        char sourcefile[256];
-        char destfile[256];
-        
-        // Construir rutas de origen y destino
-        s_printf(sourcefile, "%s/%s", directory, &files[i * 256]);
-        s_printf(destfile, "%s/%s", destdir, &files[i * 256]);
-        
-        if (strlen(coment) > 0) {
-            printerCU(destfile, coment, 0);
-        }
-        
-        // Eliminar archivo de destino si existe
-        if (sd_file_exists(destfile)) {
-            f_unlink(destfile);
-        }
-        
-        // Copiar archivo de origen a destino
-        copyfile(sourcefile, destfile);
-        
-        i++;
+    while(files[i * 256])
+    {
+		if(strlen(&files[i * 256]) <= 100){	
+            char* sourcefile = (char*)malloc(256);
+			strcpy(sourcefile, "\0");
+			strcat(sourcefile, directory);
+			strcat(sourcefile, "/");
+			strcat(sourcefile, &files[i * 256]);
+			
+            char* destfile = (char*)malloc(256);
+			strcpy(destfile, "\0");
+			strcat(destfile, destdir);
+			strcat(destfile, "/");
+			strcat(destfile, &files[i * 256]);
+			if(strlen(coment) > 0){
+				printerCU(destfile,coment,0);
+			}
+			f_unlink(destfile);
+			copyfile(sourcefile,destfile);
+            free(sourcefile);
+            free(destfile);
+		}
+	i++;
     }
 
     u32 r = 0;
-    while (folder[r * 256]) {
-        char folderpath[256];
-        char folderdest[256];
-        
-        // Construir rutas de origen y destino para carpetas
-        s_printf(folderpath, "%s/%s", directory, &folder[r * 256]);
-        s_printf(folderdest, "%s/%s", destdir, &folder[r * 256]);
-        
-        copyarall(folderpath, folderdest, filet, coment);  // Llamar recursivamente para copiar contenido de carpetas
-        
-        r++;
-    }
+    while(folder[r * 256])
+    {
+		if((strlen(&folder[r * 256]) <= 100) & (strlen(&folder[r * 256]) > 0)){			
+            char* folderpath = (char*)malloc(256);
+			strcpy(folderpath, "\0");
+			strcat(folderpath, directory);
+			strcat(folderpath, "/");
+			strcat(folderpath, &folder[r * 256]);
 
-    // Liberar memoria asignada dinámicamente
-    free(files);
-    free(folder);
+            char* folderdest = (char*)malloc(256);
+			strcpy(folderdest, "\0");
+			strcat(folderdest, destdir);
+			strcat(folderdest, "/");
+			strcat(folderdest, &folder[r * 256]);
+
+			copyarall(folderpath, folderdest, filet, coment);
+            free(folderpath);
+            free(folderdest);
+		}
+	r++;
+    }
 }
+
 
 //folder delete use with care
-void deleteall(char *directory, char *filet, char *coment) {
-    if (!sd_file_exists(directory)) return;
-
-    char *files = listfil(directory, filet, true);
-    char *folder = listfol(directory, "*", true);
-    
-    if (!files || !folder) return;  // Verificar si se pudo obtener la lista de archivos y carpetas
-
+void deleteall(char* directory, char* filet, char* coment){
+if (!sd_file_exists(directory)) return;
+char* files = listfil(directory, filet, true);
+char* folder = listfol(directory, "*", true);
     u32 i = 0;
-    while (files[i * 256]) {
-        char destfile[256];
-        
-        // Construir ruta completa del archivo a eliminar
-        s_printf(destfile, "%s/%s", directory, &files[i * 256]);
-        
-        if (strlen(coment) > 0) {
-            printerCU(destfile, coment, 2);
-        } else {
-            printerCU(destfile, "", 2);
-        }
-        
-        // Eliminar el archivo
-        f_unlink(destfile);
-        
-        i++;
+    while(files[i * 256])
+    {
+        if(strlen(&files[i * 256]) <= 100){
+            char* destfile = (char*)malloc(256);
+			strcpy(destfile, "\0");
+			strcat(destfile, directory);
+			strcat(destfile, "/");
+			strcat(destfile, &files[i * 256]);
+			if(strlen(coment) > 0){
+				printerCU(destfile,coment,2);
+			} else {
+				printerCU(destfile,"",2);
+			}
+				
+			f_unlink(destfile);
+            free(destfile);
+		}
+	i++;
     }
-
-    free(files);  // Liberar memoria asignada para la lista de archivos
 
     u32 r = 0;
-    while (folder[r * 256]) {
-        char folderpath[256];
-        
-        // Construir ruta completa de la carpeta a eliminar
-        s_printf(folderpath, "%s/%s", directory, &folder[r * 256]);
-        
-        // Llamar recursivamente para eliminar contenido de las subcarpetas
-        deleteall(folderpath, filet, coment);
-        
-        r++;
+    while(folder[r * 256])
+    {
+		if((strlen(&folder[r * 256]) <= 100) & (strlen(&folder[r * 256]) > 0)){
+            char* folderpath = (char*)malloc(256);
+			strcpy(folderpath, "\0");
+			strcat(folderpath, directory);
+			strcat(folderpath, "/");
+			strcat(folderpath, &folder[r * 256]);
+
+			deleteall(folderpath, filet,coment);
+            free(folderpath);
+		}
+	r++;
     }
-
-    free(folder);  // Liberar memoria asignada para la lista de carpetas
-
-    // Eliminar la carpeta original después de eliminar su contenido
-    f_unlink(directory);
+f_unlink(directory);
 }
+
 
 
 bool HasArchBit(const char *directory)
