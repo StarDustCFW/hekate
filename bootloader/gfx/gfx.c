@@ -20,6 +20,7 @@
 #include "gfx.h"
 
 #define TRANSPARENT_COLOR 0xFF1D1919
+#define COLUMN2_X 640
 
 // Global gfx console and context.
 gfx_ctxt_t gfx_ctxt;
@@ -268,7 +269,7 @@ void gfx_putc(char c)
 				gfx_con.y = 0;
 
 				if (!gfx_column)
-					gfx_column = 1080;
+					gfx_column = 680;
 				else
 					gfx_column = 0;
 				gfx_con.x = gfx_column;
@@ -302,7 +303,7 @@ void gfx_putc(char c)
 					gfx_con.y = 0;
 
 					if (!gfx_column)
-						gfx_column = 1080;
+						gfx_column = 680;
 					else
 						gfx_column = 0;
 					gfx_con.x = gfx_column;
