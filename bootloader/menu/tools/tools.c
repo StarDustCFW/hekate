@@ -248,55 +248,98 @@ void BootStrapNX()
 	}
 }
 
-void printerCU(char *text,const char *title,int clean)
-{
-		static char titw[9999] = "-.-";
-		static char buff[9999] = "\0";
-		static int count = 0;
-		if(strlen(title) <= 0){
-			title=titw;
-		}
+int count = 0;
+void ptitle(char *text){
+    //crear un char de espacios con 256 de longitud
+    
+        gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
+        gfx_con.fntsz = 16;
 
-		
+        char *FL = "                                           ";
+       //Sobrescribir Primera linea
+        gfx_con_setpos( 10, 5);
+        gfx_printf( "%s\n",FL);
+
+        //escribir el titulo
+        gfx_con_setpos(10, 5);
+        gfx_printf( "%s\n",text);
+        gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
+        gfx_con.fntsz = 8;
+}
+void loge(char *text){
+    u32 reservex = gfx_con.x;
+    u32 reservey = gfx_con.y;
+    
+    //crear un char de espacios con 256 de longitud
+    char *FL = "                                                                                           ";
+
+    gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
+    gfx_con.fntsz = 8;
+
+    gfx_con_setpos(0, 600);
+    gfx_printf( "%s\n",FL);
+
+
+
+    if(strlen(text) > 0){
+        gfx_con_setpos(0, 600);
+        gfx_printf( ">%s\n",text);
+    }
+    gfx_con.fntsz = 16;
+
+    gfx_con_setpos(10, 10);
+    gfx_con.y = reservey;
+    gfx_con.x = reservex;
+}
+void logn(char *text){
+    gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
+    gfx_con.fntsz = 8;
+    gfx_printf( "%s\n",text);
+    gfx_con.fntsz = 16;
+}
+
+void printerCU(char *text,char *title,int clean)
+{
+		static char *titw;
 		if (clean == 1){
 			count = 0;
-			strcpy(buff, "\0");
-			strcpy(buff, "");
-			strcpy(titw, "\0");
-			strcpy(titw, "");
+            gfx_clear_buffer();
+			ptitle(title);
 			return;
 		}
-		if (clean != 2) gfx_swap_buffer();
+        if(title != titw){
+            if(strlen(title) > 0){
+                u32 reservex = gfx_con.x;
+                u32 reservey = gfx_con.y;
+
+                titw=title;
+                ptitle(title);
+                
+                if (count > 0){
+                    gfx_con.y = reservey;
+                    gfx_con.x = reservex;
+                }
+            }
+        }
 		
-		gfx_con.fntsz = 16;
-		gfx_con_setpos( 10, 5);
-		gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
-		gfx_printf( "%s\n",title);
-		gfx_con_setcol( 0xFFF9F9F9, 0xFF726F68, 0xFF191414);
-		gfx_con.fntsz = 8;
-		gfx_printf( "%s\n",buff);
-		gfx_con.fntsz = 16;
-		//gfx_printf( "\n->%s<-\n",text);
-		gfx_swap_buffer();
-		if (clean > 100){msleep(clean);clean=2;}
+		if (clean == 2){
+            loge(text);
+            return;
+		}
+
+		if (clean > 100){msleep(clean);}
 		if (clean == 0)
 		{
-			if(strlen(title) > 0){
-				strcpy(titw, "\0");
-				strcpy(titw, title);
-			}
-			if (count > 38)
+			if (count > 68)
 			{
 				count = 0;
-				strcpy(buff, "\0");
-				strcpy(buff, "");
                 gfx_clear_buffer();
+                titw[0] = 0;
 			}
-			if(strlen(text) > 0){
-				strcat(buff, text);
-				strcat(buff, "\n");
-				count++;
-			}
+            if(strlen(text) > 0){
+                logn(text);
+                count++; 
+            }
 		}
 }
 
@@ -418,4 +461,54 @@ void *m_realloc(void* ptr, u32 current_size, u32 new_size)
         }
         return NULL;
     }
+}
+
+bool cyper(char *inputFileName, char *outputFileName){
+    FIL inputFile, outputFile;  // Descriptores de archivo de entrada y salida
+    FRESULT res;
+    UINT bytesRead;
+
+    // Abrir el archivo de entrada
+    res = f_open(&inputFile, inputFileName, FA_READ);
+    if (res != FR_OK) {
+        gfx_printf("Error al abrir el archivo de entrada. Código de error: %d\n", res);
+        return 1;
+    }
+
+    // Abrir el archivo de salida para escribir el archivo cifrado
+    res = f_open(&outputFile, outputFileName, FA_CREATE_ALWAYS | FA_WRITE);
+    if (res != FR_OK) {
+        gfx_printf("Error al abrir el archivo de salida. Código de error: %d\n", res);
+        f_close(&inputFile);   // Cerrar el archivo de entrada
+        return 1;
+    }
+
+    char kysize[256];
+    u32 side = f_size(&inputFile);
+    side = side * 2;
+    s_printf(kysize, "%d", side);
+
+    // Leer el archivo de entrada y cifrarlo
+    BYTE buffer[256]; // Buffer para almacenar datos leídos del archivo
+    while (1) {
+        res = f_read(&inputFile, buffer, sizeof(buffer), &bytesRead);
+        if (res != FR_OK || bytesRead == 0) {
+            break; // Error o fin del archivo
+        }
+
+        int keyLength = strlen(kysize);
+        for (UINT i = 0; i < bytesRead; i++) {
+            // Cifrado XOR con la clave
+            buffer[i] = buffer[i] ^ kysize[i % keyLength];
+        }
+
+        f_write(&outputFile, buffer, bytesRead, &bytesRead);
+    }
+
+    // Cerrar archivos
+    f_close(&inputFile);
+    f_close(&outputFile);
+
+    //gfx_printf("El archivo %s swap\n",outputFileName);
+    return 0;    
 }
