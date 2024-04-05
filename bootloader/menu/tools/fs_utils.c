@@ -323,55 +323,46 @@ void moverall(char* directory, char* destdir, char* filet, char* coment){
     char* folder = listfol(directory, "*", true);
     f_mkdir(destdir);
     u32 i = 0;
-    while(files[i * 256])
+    while(files[i * 256] != 0)
     {
-		if(strlen(&files[i * 256]) <= 250){		
-            char* sourcefile = (char*)malloc(256);
-			strcpy(sourcefile, "\0");
-			strcat(sourcefile, directory);
-			strcat(sourcefile, "/");
-			strcat(sourcefile, &files[i * 256]);
-			
-            char* destfile = (char*)malloc(256);
-			strcpy(destfile, "\0");
-			strcat(destfile, destdir);
-			strcat(destfile, "/");
-			strcat(destfile, &files[i * 256]);
+		if((strlen(&files[i * 256]) <= 250) && (strcmp(&files[i * 256], " ") != 0)){
+            
+            char sourcefile[256];
+            s_printf(sourcefile, "%s/%s",directory,&files[i * 256]);
+
+            char destfile[256];
+            s_printf(destfile, "%s/%s",destdir,&files[i * 256]);
+            
+		if (btn_read() & BTN_VOL_DOWN) power_set_state(POWER_OFF);
+
 			if(strlen(coment) > 0){
 				printerCU(destfile,coment,0);
 			}
-			f_unlink(destfile);
-			f_rename(sourcefile,destfile);
-            free(sourcefile);
-            free(destfile);
+			f_unlink(destfile);f_rename(sourcefile,destfile);
 		}
 	i++;
     }
     free(files);  // Liberar memoria asignada para la lista de archivos
-
+    
+    //Recursivo en Carpetas
     u32 r = 0;
-    while(folder[r * 256])
+    while(folder[r * 256] != 0)
     {
-		if((strlen(&folder[r * 256]) <= 250) & (strlen(&folder[r * 256]) > 0)){			
-            char* folderpath = (char*)malloc(256);
-			strcpy(folderpath, "\0");
-			strcat(folderpath, directory);
-			strcat(folderpath, "/");
-			strcat(folderpath, &folder[r * 256]);
+		if((strlen(&folder[r * 256]) <= 250) & (strlen(&folder[r * 256]) > 0)){
 
-            char* folderdest = (char*)malloc(256);
-			strcpy(folderdest, "\0");
-			strcat(folderdest, destdir);
-			strcat(folderdest, "/");
-			strcat(folderdest, &folder[r * 256]);
+            char folderpath[512];
+            s_printf(folderpath, "%s/%s",directory,&folder[r * 256]);
+
+            char folderdest[512];
+            s_printf(folderdest, "%s/%s",destdir,&folder[r * 256]);
 
 			moverall(folderpath, folderdest, filet, coment);
-            free(folderpath);
-            free(folderdest);
 		}
 	r++;
     }
     free(folder);  // Liberar memoria asignada para la lista de carpetas
+    if (sd_file_exists(destdir))
+        f_unlink(directory);// remover directorio origen 
 }
 
 //move
@@ -459,8 +450,6 @@ char* folder = listfol(directory, "*", true);
 			strcat(destfile, &files[i * 256]);
 			if(strlen(coment) > 0){
 				printerCU(destfile,coment,2);
-			} else {
-				printerCU(destfile,"",2);
 			}
 				
 			f_unlink(destfile);
@@ -553,7 +542,7 @@ close_dir:
 
 char *listfol(const char *directory, const char *pattern, bool includeHiddenFiles)
 {
-	u8 max_entries = 61;
+	u8 max_entries = 255;
 
 	int res = 0;
 	int i = 0, j = 0, k = 0;
@@ -571,7 +560,7 @@ char *listfol(const char *directory, const char *pattern, bool includeHiddenFile
 			res = f_readdir(&dir, &fno);
 			if (res || !fno.fname[0])
 				break;
-			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			if ((fno.fattrib & AM_DIR) && (strcmp(fno.fname, "..") != 0) && (strcmp(fno.fname, ".") != 0) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 			{
 				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
 				k++;
@@ -585,7 +574,7 @@ char *listfol(const char *directory, const char *pattern, bool includeHiddenFile
 	{
 		do
 		{
-			if ((fno.fattrib & AM_DIR) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			if ((fno.fattrib & AM_DIR) && (strcmp(fno.fname, "..") != 0) && (strcmp(fno.fname, ".") != 0) && (fno.fname[0] != ':') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 			{
 				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
 				k++;
@@ -641,11 +630,11 @@ char *listfol(const char *directory, const char *pattern, bool includeHiddenFile
 	free(copy_entries);
 
 	return dir_entries;
-	}
+}
 
 char *listfil(const char *directory, const char *pattern, bool includeHiddenFiles)
 {
-	u8 max_entries = 61;
+	u8 max_entries = 255;
 
 	int res = 0;
 	int i = 0, j = 0, k = 0;
