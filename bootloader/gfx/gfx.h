@@ -59,6 +59,7 @@ typedef struct _gfx_con_t
 	u32 x;
 	u32 y;
 	u32 scale;
+	u32 col;
 	u32 savedx;
 	u32 savedy;
 	u32 fgcol;

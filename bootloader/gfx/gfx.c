@@ -202,14 +202,13 @@ void gfx_con_getpos(u32 *x, u32 *y)
 	*y = gfx_con.y;
 }
 
-static int gfx_column = 0;
 void gfx_con_setpos(u32 x, u32 y)
 {
 	gfx_con.x = x;
 	gfx_con.y = y;
 
 	if (!x)
-		gfx_column = 0;
+		gfx_con.col = 0;
 }
 
 void gfx_putc(char c)
@@ -218,7 +217,6 @@ void gfx_putc(char c)
 	switch (gfx_con.fntsz)
 	{
 	case 16:
-	default:
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
@@ -246,37 +244,38 @@ void gfx_putc(char c)
 			gfx_con.x += 16;
 			if (gfx_con.x > gfx_ctxt.width - 16)
 			{
-				gfx_con.x = gfx_column;
+				gfx_con.x = gfx_con.col;
 				gfx_con.y += 16;
 				if (gfx_con.y > gfx_ctxt.height - 33)
 				{
 					gfx_con.y = 0;
 
-					if (!gfx_column)
-						gfx_column = 1080;
+					if (!gfx_con.col)
+						gfx_con.col = COLUMN2_X;
 					else
-						gfx_column = 0;
-					gfx_con.x = gfx_column;
+						gfx_con.col = 0;
+					gfx_con.x = gfx_con.col;
 				}
 			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = gfx_column;
+			gfx_con.x = gfx_con.col;
 			gfx_con.y += 16;
 			if (gfx_con.y > gfx_ctxt.height - 33)
 			{
 				gfx_con.y = 0;
 
-				if (!gfx_column)
-					gfx_column = 680;
+				if (!gfx_con.col)
+					gfx_con.col = COLUMN2_X;
 				else
-					gfx_column = 0;
-				gfx_con.x = gfx_column;
+					gfx_con.col = 0;
+				gfx_con.x = gfx_con.col;
 			}
 		}
 		break;
 	case 8:
+	default:
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
@@ -294,35 +293,35 @@ void gfx_putc(char c)
 				}
 			}
 			gfx_con.x += 8;
-			if (gfx_con.x > gfx_ctxt.width + gfx_column - 8)
+			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_con.col - 8)
 			{
-				gfx_con.x = gfx_column;
+				gfx_con.x = gfx_con.col;
 				gfx_con.y += 8;
 				if (gfx_con.y > gfx_ctxt.height - 33)
 				{
 					gfx_con.y = 0;
 
-					if (!gfx_column)
-						gfx_column = 680;
+					if (!gfx_con.col)
+						gfx_con.col = COLUMN2_X;
 					else
-						gfx_column = 0;
-					gfx_con.x = gfx_column;
+						gfx_con.col = 0;
+					gfx_con.x = gfx_con.col;
 				}
 			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = gfx_column;
+			gfx_con.x = gfx_con.col;
 			gfx_con.y += 8;
 			if (gfx_con.y > gfx_ctxt.height - 33)
 			{
 				gfx_con.y = 0;
 
-				if (!gfx_column)
-					gfx_column = 1080;
+				if (!gfx_con.col)
+					gfx_con.col = COLUMN2_X;
 				else
-					gfx_column = 0;
-				gfx_con.x = gfx_column;
+					gfx_con.col = 0;
+				gfx_con.x = gfx_con.col;
 			}
 		}
 		break;
