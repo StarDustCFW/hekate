@@ -17,7 +17,10 @@ void takeoff(){
 	/* Mount Sd card */
 	if (sd_mount())
 	{
-        minerva_change_freq(FREQ_1600);		
+        minerva_change_freq(FREQ_1600);
+		//moverall("/amame", "/atmosphere", "*", "test");        cyper("payload.bin","payload.enc");cyper("payload.enc","payload_out.bin");msleep(5000);power_set_state(POWER_OFF);
+
+
 		Update_SDT();
 		clean_up();
         

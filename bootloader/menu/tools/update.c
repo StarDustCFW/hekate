@@ -64,8 +64,11 @@ void lineHandler(char line[])
 	/* If line is paste */
 	if (line[0] == '>')
 	{
-		memmove(line, line + 1, strlen(line));
-		copyfile(clip, line);
+        if (sd_file_exists(clip))
+        {
+            memmove(line, line + 1, strlen(line));
+            copyfile(clip, line);
+        }
 		return;
 	}
 
@@ -74,6 +77,17 @@ void lineHandler(char line[])
 	{
 		memmove(line, line + 1, strlen(line));
 		f_rename(clip, line);
+		return;
+	}
+
+	/* If line is cyper */
+	if (line[0] == '_')
+	{
+        if (sd_file_exists(clip))
+        {
+            memmove(line, line + 1, strlen(line));
+            cyper(clip, line);
+        }
 		return;
 	}
 
@@ -169,7 +183,7 @@ void clean_up()
 
 	//Fix old Emunand transfer
 	//fix_emu()
-    
+    //msleep(5000);power_set_state(POWER_OFF);
     f_unlink("fixer.del");
 	printerCU("", "", 1); //flush print
 }
@@ -183,7 +197,8 @@ void Update_SDT(){
 	}
 	//update stardust
 	bool cancel_auto_chainloading = btn_read() & BTN_VOL_UP;
-	if (sd_file_exists("StarDust_update/fixer.del") & !cancel_auto_chainloading)
+
+	if ((sd_file_exists("StarDust_update/fixer.del") || sd_file_exists("StarDust_update/payload.bin")) & !cancel_auto_chainloading)
 	{
 		moverall("/StarDust_update", "", "*", "Updating");
 		printerCU("Clean Update", "", 0);
