@@ -51,7 +51,6 @@ char *buffer_blk;
 void upd_menus();
 //menus
 int main_menu = 0;
-char* imagemenus = "background.bmp";
 
 //low icons Y
 u64 low_icons = 645;
@@ -63,16 +62,40 @@ u32 servstep = 0;
 u32 isAMS = 1;
 u32 iamsafe=0;
 
+#define max_menu 4 
+
+gui_menu_t *menus[max_menu];
+
+/*
+gui_menu_t **menu;
+gui_menu_t *menu_0;
+gui_menu_t *menu_1;
+gui_menu_t *menu_2;
+gui_menu_t *menu_3;
+gui_menu_t *menu_4;
+gui_menu_t *menu_5;
+
+*/
+
+void upd_menus(){
+    menus[0] = gui_menu_create("ArgonNX","background.bmp");
+    menus[1] = gui_menu_create("ArgonNX","back-set.bmp");
+    menus[2] = gui_menu_create("ArgonNX","back-inc.bmp");
+}
+
 /* Init Boot screen */
 void gui_init_argon_boot(void)
 {
 	SDStrap();
 	loadTheme();
+    
+    //Iinit Menus
+    upd_menus();
+
 	/* Init pool for menu */
 	if (sd_file_exists("StarDust/autoboot.inc"))
 	{
 		main_menu = 4;
-        imagemenus = "back-inc.bmp";
 		f_unlink("StarDust/autoboot.inc");
 		Incac = 1;
 	}
@@ -82,12 +105,11 @@ void gui_init_argon_boot(void)
 		iamsafe = 1;
 	}
 	
-	//gui_menu_t *menu = gui_menu_create("ArgonNX", imagemenus);
 	change_brightness(0);
 
 	//show display without icons
 	if ((Incac != 1) & (iamsafe != 1)) {
-        gui_menu_boot(imagemenus);
+        gui_menu_boot(menus[main_menu]);
 	}
 
 	//if (res > 0){gfx_swap_buffer();}
@@ -148,26 +170,6 @@ void gui_init_argon_boot(void)
 	gui_init_argon_menu();
 }
 
-#define max_menu 4 
-
-gui_menu_t *menus[max_menu];
-
-/*
-gui_menu_t **menu;
-gui_menu_t *menu_0;
-gui_menu_t *menu_1;
-gui_menu_t *menu_2;
-gui_menu_t *menu_3;
-gui_menu_t *menu_4;
-gui_menu_t *menu_5;
-
-*/
-
-void upd_menus(){
-    menus[0] = gui_menu_create("ArgonNX","background.bmp");
-    menus[1] = gui_menu_create("ArgonNX","back-set.bmp");
-    menus[2] = gui_menu_create("ArgonNX","back-inc.bmp");
-}
 
 void pre_load_menus(int menuses, bool StarUp)
 {
@@ -624,9 +626,6 @@ void pre_load_menus(int menuses, bool StarUp)
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
-    //Iinit Menus
-    upd_menus();
-
 	//main menu loop
     while(true){
         change_brightness(0);
@@ -634,12 +633,11 @@ void gui_init_argon_menu(void)
         if (menus[main_menu]->next_entry == 0)
             pre_load_menus(main_menu, 0);
         
-        //static_menu_elements(menu);
-        /* Start menus[1] */
+        /* Start menus[0] */
         gui_menu_open(menus[main_menu]);
 
         
-        /*
+    /*
         gfx_con_setpos( 160, 50);
         gfx_printf( "end off menu \n");
     */

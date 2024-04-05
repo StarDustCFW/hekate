@@ -154,7 +154,7 @@ int gui_menu_open(gui_menu_t *menu)
 	return res;
 }
 
-int gui_menu_boot(char* imagemenus)
+int gui_menu_boot(gui_menu_t *menu)
 {
     /* 
      * AutoBoot Screen
@@ -163,11 +163,8 @@ int gui_menu_boot(char* imagemenus)
 		{
             gfx_con_setcol( 0xFF008F39, 0xFF726F68, 0xFF191414);
             
-            char* imagemenus = "background.bmp";
-            custom_gui_t* cg = custom_gui_load(imagemenus);
-			if(!render_custom_background(cg))
-				gfx_clear_color( 0xFF191414);
-            custom_gui_end(cg);
+            if(!render_custom_background(menu->custom_gui))
+                gfx_clear_color( 0xFF191414);
 
 			gfx_con.scale = 3;
 			gfx_con_setpos( 1070, 0);
