@@ -1448,6 +1448,7 @@ menu_t menu_top = { ment_top, "hekate v6.2.0", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
+#include "menu/Land.h"
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -1494,7 +1495,7 @@ void ipl_main()
 	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
-	// Train DRAM and switch to max frequency.
+    // Train DRAM and switch to max frequency.
 	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
@@ -1504,7 +1505,7 @@ void ipl_main()
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
 	u32 *fb = display_init_window_a_pitch();
-	gfx_init_ctxt(fb, 720, 1280, 720);
+	gfx_init_ctxt(fb, 1280, 720, 720);
 	gfx_con_init();
 
 	// Initialize backlight PWM.
@@ -1514,23 +1515,26 @@ skip_lp0_minerva_config:
 	// Get R2C config from RTC.
 	if (h_cfg.t210b01)
 		_r2c_get_config_t210b01();
+    
+    
 
+    takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
-	_show_errors();
+	//_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-		_auto_launch();
+//	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+//		_auto_launch();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();
 
 	// Set ram to a freq that doesn't need periodic training.
 	minerva_change_freq(FREQ_800);
-
+/*
 	while (true)
 		tui_do_menu(&menu_top);
-
+*/
 	// Halt BPMP if we managed to get out of execution.
 	while (true)
 		bpmp_halt();
