@@ -60,7 +60,7 @@ typedef struct dip_hdr
 } __attribute__((packed)) dip_hdr_t;
 
 void create(gui_menu_t *menu, char *path, int x, int y, int (*handler)(void *), void *param);
-void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y, int width, int height);
+void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y);
 void create_switch(gui_menu_t *menu, const char *name, char *path, char *path2, bool bit, int x, int y, int (*handler)(void *), void *param, int (*handler2)(void *), void *param2);
 
 void loadTheme();

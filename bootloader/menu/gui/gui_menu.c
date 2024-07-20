@@ -300,9 +300,9 @@ void create_switch(gui_menu_t *menu, const char *name, char *path, char *path2, 
     free(buf);
 }
 
-void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y, int width, int height)
+void create_no_bitmap(gui_menu_t *menu, char *text, int x, int y)
 {
-	gui_menu_append_entry(menu, gui_create_menu_entry_no_bitmap(text, x, y, width, height, NULL, NULL));
+	gui_menu_append_entry(menu, gui_create_menu_entry_no_bitmap(text, x, y, 0, 0, NULL, NULL));
 }
 
 char *them = "skins/xbox";
