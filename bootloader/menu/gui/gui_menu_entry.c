@@ -104,21 +104,45 @@ gui_menu_entry_t *gui_create_menu_entry_no_bitmap(const char *text,
 static u32 get_text_width(char *text)
 {
     u32 lenght = strlen(text);
-    return lenght * gfx_con.scale * (u32)CHAR_WIDTH;
+    //return lenght * gfx_con.scale * (u32)CHAR_WIDTH;
+    return lenght * gfx_con.fntsz;
 }
 
 static void render_text_centered(gui_menu_entry_t *entry, char *text)
 {
-    gfx_con.scale = 2;
+    s32 x_set = entry->x;
+    u32 y_set = entry->y;
 
-    /* Set text below the logo and centered */
-    s32 x_offset = -(get_text_width(text) - entry->width) / 2;
-    u32 y_offset = entry->bitmap != NULL ? entry->height /2 - (gfx_con.fntsz/2): 0;
+   // gfx_con.scale = 2;
+    if(entry->bitmap != NULL){
+        x_set = x_set + (entry->width /2) - (get_text_width(text) / 2);
+        y_set = y_set + (entry->height /2) - (gfx_con.fntsz/2);
+    } else {
+        x_set = x_set - (get_text_width(text) / 2);
+    }
+    // Set text below the logo and centered  (entry->width - get_text_width(text))/ 2
+    // s32 x_set = entry->bitmap != NULL ? 0 : get_text_width(text) / 2;
+    // u32 y_set = entry->bitmap != NULL ? entry->height /2 - (gfx_con.fntsz/2): 0;
 
-    gfx_con.scale = 2;
-    gfx_con_setpos( entry->x + x_offset, entry->y + y_offset);
+    //gfx_con.scale = 2;
+    gfx_con_setpos(x_set, y_set);
 
     gfx_printf( "%s", entry->text);
+/*
+    gfx_con_setpos(0, 115);
+	gfx_con_setcol( 0xFFF9F9F9, 0xFFFFFFFF, 0xFF191414);
+
+    //gfx_printf( "X  %d\n", entry->x);
+    gfx_printf( "Y  %d\n", entry->y);
+    gfx_printf( "oX %d   \n", x_set);
+    gfx_printf( "oY %d   \n", y_set);
+
+    gfx_printf( "\n%d\n", gfx_con.fntsz);
+    gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);
+
+    msleep(200);
+*/    
+
 }
 
 /* Renders a gfx menu entry */
@@ -135,7 +159,7 @@ void gui_menu_render_entry(gui_menu_entry_t* entry)
     }
 
 
-    if (strlen(entry->text) > 0)
+    if (strlen(entry->text) > 1)
         render_text_centered(entry, entry->text);
 }
 
