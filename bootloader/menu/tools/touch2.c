@@ -76,7 +76,7 @@ touch_event touch_wait()
 	do 
 	{
 		//some functions to buttons on touch wait
-		if (btn_read() & BTN_VOL_DOWN) power_set_state(POWER_OFF);
+		//if (btn_read() & BTN_VOL_DOWN) power_set_state(POWER_OFF);
 		
 		if (btn_read() & BTN_POWER)	BootStrapNX();
 	

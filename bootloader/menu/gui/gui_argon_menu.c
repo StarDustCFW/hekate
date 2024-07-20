@@ -95,7 +95,7 @@ void gui_init_argon_boot(void)
 	/* Init pool for menu */
 	if (sd_file_exists("StarDust/autoboot.inc"))
 	{
-		main_menu = 4;
+		main_menu = 2;
 		f_unlink("StarDust/autoboot.inc");
 		Incac = 1;
 	}
@@ -303,7 +303,7 @@ void pre_load_menus(int menuses, bool StarUp)
             if (Incac == 0)
                 create(menus[1], "Icons/Incognito.bmp", 400, 600, (int (*)(void *))Incognito, (void *)"1");
             else
-                create(menus[1], "Icons/Incognito.bmp", 400, 600, (int (*)(void *))tool_Menus, (void *)4);
+                create(menus[1], "Icons/Incognito.bmp", 400, 600, (int (*)(void *))tool_Menus, (void *)2);
             
             //tegra explorer
             create(menus[1], "Icons/TegraEX.bmp", 620, 600, (int (*)(void *))launcher, (void *)"/StarDust/payloads/TegraExplorer.bin");
@@ -393,7 +393,10 @@ void pre_load_menus(int menuses, bool StarUp)
 			create(menus[1], "Icons/sw-off.bmp", temX, temY, (int (*)(void *))tool_Themes_on, (void *)"atmosphere");
 		else
 			create(menus[1], "Icons/sw-on.bmp", temX, temY, (int (*)(void *))tool_Themes_off, (void *)"atmosphere");
-		gui_menu_append_entry(menus[1], gui_create_menu_entry_no_bitmap("AMS", temX + 30, temY + 30, 150, 100, NULL, NULL));
+		//gui_menu_append_entry(menus[1], gui_create_menu_entry_no_bitmap("AMS", temX + 30, temY + 30, 150, 100, NULL, NULL));
+		
+		create_no_bitmap(menus[1],"AMS",temX + 100, temY + 30);
+
 		temX = temX + temS;
         
         //draw Ulaunch
@@ -500,15 +503,19 @@ void pre_load_menus(int menuses, bool StarUp)
 					{
 						create(menus[2], "Icons/sw-off.bmp", 1000, 100, (int (*)(void *))Incognito, (void *)"BE");
 					}
-					gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Blank_Prodinfo", 1020, 90, 150, 100, NULL, NULL));
+					//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Blank_Prodinfo", 1020, 90, 150, 100, NULL, NULL));
+					create_no_bitmap(menus[menuses],"Blank_Prodinfo", 1020, 90);
 				}
 
-				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("SysNand", 170, 200, 150, 100, NULL, NULL));
-				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("EmuNand", 970, 200, 150, 100, NULL, NULL));
+				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("SysNand", 170, 200, 150, 100, NULL, NULL));
+				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("EmuNand", 970, 200, 150, 100, NULL, NULL));
+				create_no_bitmap(menus[menuses],"SysNand",250, 200);
+				create_no_bitmap(menus[menuses],"EmuNand",1050, 200);
 
 				rowinc = rowinc - rowsepar;
 				colinc = colinc + colsepar;
-				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(emuserial, rowinc + 30, colinc - 20, 150, 100, NULL, NULL));
+				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(emuserial, rowinc + 30, colinc - 20, 150, 100, NULL, NULL));
+				create_no_bitmap(menus[menuses],emuserial, rowinc + 100, colinc - 20);
 				if (!sd_file_exists("prodinfo_emunand.bin"))
 					create(menus[2], "Icons/inc3.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"2");
 				else
@@ -530,14 +537,16 @@ void pre_load_menus(int menuses, bool StarUp)
 					create(menus[2], "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
 					if (emu_inc == 1)
 					{
-						gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
-						gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("/prodinfo_emunand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
+						create_no_bitmap(menus[menuses],"Missing", rowinc + 100, colinc + 100);
+						create_no_bitmap(menus[menuses],"/prodinfo_emunand.bin", rowinc + 100, colinc + 120);
+						// gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Missing", rowinc + 100, colinc + 100, 150, 100, NULL, NULL));
+						// gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("/prodinfo_emunand.bin", rowinc + 100, colinc + 120, 150, 100, NULL, NULL));
 					}
 				}
 			}
 			else
 			{
-				rowinc = 550;
+				rowinc = 600;
 				rowsepar = 0;
 			}
 
@@ -545,6 +554,7 @@ void pre_load_menus(int menuses, bool StarUp)
 			colinc = 150;
 			rowsepar = 50;
 			colsepar = 100;
+			create(menus[2], "Icons/power.bmp", 80, 500, tool_power_off, NULL);
 			if (sd_file_exists("StarDust/sysnand_serial.txt"))
 			{
 
@@ -582,7 +592,9 @@ void pre_load_menus(int menuses, bool StarUp)
 					}
 					gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Blank_Prodinfo", rowinc + 10 - rowsepar, 90, 150, 100, NULL, NULL));
 				}
-				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(sysserial, rowinc + 40, colinc - 20, 150, 100, NULL, NULL));
+				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(sysserial, rowinc + 40, colinc - 20, 150, 100, NULL, NULL));
+				create_no_bitmap(menus[menuses],sysserial, rowinc + 100, colinc - 20);
+
 				if (!sd_file_exists("prodinfo_sysnand.bin"))
 					create(menus[2], "Icons/inc0.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"5");
 				else
@@ -605,8 +617,11 @@ void pre_load_menus(int menuses, bool StarUp)
 					create(menus[2], "Icons/inc2-off.bmp", rowinc, colinc, NULL, NULL);
 					if (sys_inc == 1)
 					{
-						gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Missing", rowinc + 30, colinc + 100, 150, 100, NULL, NULL));
-						gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("/prodinfo_sysnand.bin", rowinc + 30, colinc + 120, 150, 100, NULL, NULL));
+						create_no_bitmap(menus[menuses],"Missing", rowinc + 100, colinc + 100);
+						create_no_bitmap(menus[menuses],"/prodinfo_sysnand.bin", rowinc + 100, colinc + 120);
+
+						// gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Missing", rowinc + 100, colinc + 100, 150, 100, NULL, NULL));
+						// gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("/prodinfo_sysnand.bin", rowinc + 100, colinc + 120, 150, 100, NULL, NULL));
 					}
 				}
 			}
