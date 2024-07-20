@@ -305,6 +305,7 @@ void printerCU(char *text,char *title,int clean)
 			count = 0;
             gfx_clear_buffer();
 			ptitle(title);
+            gfx_con.fntsz = 16;
 			return;
 		}
         if(title != titw){
