@@ -11,18 +11,27 @@ IPL_MAGIC := 0x43544349 #"ICTC"
 include ./Versions.inc
 
 ################################################################################
-
-TARGET := hekate
+BUILD_VER := 6
+TARGET := payload
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
+SOURCES := bootloader/menu
 BDKDIR := bdk
 BDKINC := -I./$(BDKDIR)
-VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
+VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/))
 VPATH += $(dir $(wildcard ./$(BDKDIR)/)) $(dir $(wildcard ./$(BDKDIR)/*/)) $(dir $(wildcard ./$(BDKDIR)/*/*/))
 
+SOURCES	:=	$(foreach dir,$(SOURCES),$(shell find $(dir) -maxdepth 10 -type d))
+
+CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+
+OFILES_SRC		:= $(SFILES:.s=.o) $(CFILES:.c=.o)
+
+OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
+
 # Main and graphics.
-OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	start.o exception_handlers.o \
 	main.o heap.o \
 	gfx.o logos.o tui.o \
@@ -37,7 +46,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	fuse.o kfuse.o \
 	sdmmc.o sdmmc_driver.o emmc.o sd.o emummc.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o \
-	hw_init.o \
+	hw_init.o touch.o\
 )
 
 # Utilities.
@@ -55,8 +64,10 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	lz.o lz4.o blz.o \
 	diskio.o ff.o ffunicode.o ffsystem.o \
-	elfload.o elfreloc_arm.o \
+	elfload.o elfreloc_arm.o sprintf.o \
 )
+
+#$(info   $(OBJS))
 
 GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'
 FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
@@ -66,6 +77,7 @@ FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BLVERSION_RSVD)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_RESERVED=$(NYXVERSION_RSVD)
+CUSTOMDEFINES += -DLOAD_BUILD_VER=$(BUILD_VER)
 
 # BDK defines.
 CUSTOMDEFINES += -DBDK_MALLOC_NO_DEFRAG -DBDK_MC_ENABLE_AHB_REDIRECT -DBDK_EMUMMC_ENABLE
@@ -119,10 +131,10 @@ clean: $(TOOLS)
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(NYXDIR):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(LDRDIR): $(TARGET).bin
 	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin
