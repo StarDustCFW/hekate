@@ -39,7 +39,7 @@ hekate_config h_cfg;
 boot_cfg_t __attribute__((section ("._boot_cfg"))) b_cfg;
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
 	.magic = BL_MAGIC,
-	.version = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16),
+	.version = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16) | ((BL_VER_RL) << 24),
 	.rsvd0 = 0,
 	.rsvd1 = 0
 };
@@ -120,7 +120,7 @@ static void _reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 	}
 }
 
-bool is_ipl_updated(void *buf, char *path, bool force)
+bool is_ipl_updated(void *buf, const char *path, bool force)
 {
 	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
 
@@ -138,8 +138,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	{
 		FIL fp;
 		reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
-		boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
-		memset(tmp_cfg, 0, sizeof(boot_cfg_t));
+		boot_cfg_t *tmp_cfg = zalloc(sizeof(boot_cfg_t));
 
 		f_open(&fp, path, FA_WRITE | FA_CREATE_ALWAYS);
 		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
@@ -258,9 +257,9 @@ static void _launch_payloads()
 {
 	u8 max_entries = 61;
 	ment_t *ments  = NULL;
-	char *filelist = NULL;
 	char *file_sec = NULL;
 	char *dir = NULL;
+	dirlist_t *filelist = NULL;
 
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
@@ -287,11 +286,11 @@ static void _launch_payloads()
 
 		while (true)
 		{
-			if (i > max_entries || !filelist[i * 256])
+			if (i > max_entries || !filelist->name[i])
 				break;
 			ments[i + 2].type    = INI_CHOICE;
-			ments[i + 2].caption = &filelist[i * 256];
-			ments[i + 2].data    = &filelist[i * 256];
+			ments[i + 2].caption = filelist->name[i];
+			ments[i + 2].data    = filelist->name[i];
 
 			i++;
 		}
@@ -623,7 +622,7 @@ static void _nyx_load_run()
 
 	// Check if Nyx version is old.
 	u32 expected_nyx_ver = ((NYX_VER_MJ + '0') << 24) | ((NYX_VER_MN + '0') << 16) | ((NYX_VER_HF + '0') << 8);
-	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF));
+	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF)) & 0xFFFFFF00;
 	if (nyx_ver < expected_nyx_ver)
 	{
 		h_cfg.errors |= ERR_SYSOLD_NYX;
@@ -1139,7 +1138,7 @@ static void _show_errors()
 
 		if (h_cfg.errors & ERR_L4T_KERNEL)
 		{
-			WPRINTF("Kernel panic occurred!\n");
+			WPRINTF("L4T Kernel panic occurred!\n");
 			if (!(h_cfg.errors & ERR_SD_BOOT_EN))
 			{
 				if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
@@ -1185,6 +1184,9 @@ static void _check_low_battery()
 	int enough_battery;
 	int batt_volt = 0;
 	int charge_status = 0;
+
+	// Enable charger in case it's disabled.
+	bq24193_enable_charger();
 
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
 	max17050_get_property(MAX17050_AvgVCELL,   &batt_volt);
@@ -1444,11 +1446,10 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.2.0", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.2.2", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
-#include "menu/Land.h"
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -1495,7 +1496,7 @@ void ipl_main()
 	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
-    // Train DRAM and switch to max frequency.
+	// Train DRAM and switch to max frequency.
 	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
@@ -1505,7 +1506,7 @@ void ipl_main()
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
 	u32 *fb = display_init_window_a_pitch();
-	gfx_init_ctxt(fb, 1280, 720, 720);
+	gfx_init_ctxt(fb, 720, 1280, 720);
 	gfx_con_init();
 
 	// Initialize backlight PWM.
@@ -1515,26 +1516,23 @@ skip_lp0_minerva_config:
 	// Get R2C config from RTC.
 	if (h_cfg.t210b01)
 		_r2c_get_config_t210b01();
-    
-    
 
-    takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
-	//_show_errors();
+	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-//	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-//		_auto_launch();
+	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+		_auto_launch();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();
 
 	// Set ram to a freq that doesn't need periodic training.
 	minerva_change_freq(FREQ_800);
-/*
+
 	while (true)
 		tui_do_menu(&menu_top);
-*/
+
 	// Halt BPMP if we managed to get out of execution.
 	while (true)
 		bpmp_halt();
