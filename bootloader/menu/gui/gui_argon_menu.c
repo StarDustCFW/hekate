@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include "utils/types.h"
 #include "../tools/fs_utils.h"
-#include "utils/dirlist.h"
+//#include "utils/dirlist.h"
 #include "utils/util.h"
 #include "../tools/touch2.h"
 #include "utils/btn.h"

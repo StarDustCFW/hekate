@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "utils/dirlist.h"
+//#include "utils/dirlist.h"
 #include "../tools/fs_utils.h"
 #include "utils/util.h"
 #include "display/di.h"
