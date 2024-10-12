@@ -514,8 +514,8 @@ void pre_load_menus(int menuses, bool StarUp)
 
 				rowinc = rowinc - rowsepar;
 				colinc = colinc + colsepar;
-				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(emuserial, rowinc + 30, colinc - 20, 150, 100, NULL, NULL));
-				create_no_bitmap(menus[menuses],emuserial, rowinc + 100, colinc - 20);
+				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(emuserial, rowinc + 100, colinc - 20, 150, 100, NULL, NULL));
+				//create_no_bitmap(menus[menuses],emuserial, rowinc + 100, colinc - 20);
 				if (!sd_file_exists("prodinfo_emunand.bin"))
 					create(menus[2], "Icons/inc3.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"2");
 				else
@@ -592,8 +592,8 @@ void pre_load_menus(int menuses, bool StarUp)
 					}
 					gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap("Blank_Prodinfo", rowinc + 10 - rowsepar, 90, 150, 100, NULL, NULL));
 				}
-				//gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(sysserial, rowinc + 40, colinc - 20, 150, 100, NULL, NULL));
-				create_no_bitmap(menus[menuses],sysserial, rowinc + 100, colinc - 20);
+				gui_menu_append_entry(menus[2], gui_create_menu_entry_no_bitmap(sysserial, rowinc + 100, colinc - 20, 150, 100, NULL, NULL));
+				//create_no_bitmap(menus[menuses],sysserial, rowinc + 100, colinc - 20);
 
 				if (!sd_file_exists("prodinfo_sysnand.bin"))
 					create(menus[2], "Icons/inc0.bmp", rowinc, colinc, (int (*)(void *))Incognito, (void *)"5");

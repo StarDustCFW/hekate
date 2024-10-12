@@ -24,6 +24,13 @@ void takeoff(){
         
 		/* Cofigure touch input */
 		touch_power_on();
+        // emummc_load_cfg();
+        
+        // gfx_con.fntsz = 16;
+		// gfx_printf( "No sd card found...\n");
+        // gfx_printf("Something go Wrong\n\n");
+        // msleep(5000); // Guard against injection VOL+.
+
         
 		gui_init_argon_boot();
 		//gui_init_argon_menu();
