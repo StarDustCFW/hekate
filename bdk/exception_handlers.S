@@ -70,8 +70,8 @@
 .section .text._irq_setup
 .arm
 
-.extern ipl_main
-.type ipl_main, %function
+.extern ipl_main2
+.type ipl_main2, %function
 
 .extern svc_handler
 .type svc_handler, %function
@@ -112,7 +112,7 @@ _irq_setup:
 	/* Enable interrupts */
 	BL irq_enable_cpu_irq_exceptions
 
-	B ipl_main
+	B ipl_main2
 	B .
 
 .globl excp_reset
