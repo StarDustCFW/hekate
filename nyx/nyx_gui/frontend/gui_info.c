@@ -366,8 +366,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 
 	lv_label_set_static_text(lb_desc,
-		"SKU:\n"
-		"DRAM ID:\n"
+		"#FF8000 SoC:#\n"
+		"#FF8000 SKU:#\n"
+		"#FF8000 DRAM ID:#\n"
 		"#FF8000 Burnt Fuses (ODM 7/6):#\n"
 		"ODM Fields (4, 6, 7):\n"
 		"Secure Boot Key (SBK):\n"
@@ -391,8 +392,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"LOT Code 0:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
-		"Y Coordinate:\n"
-		"#FF8000 Chip ID Revision:#"
+		"Y Coordinate:"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -412,16 +412,16 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch (fuse_read_hw_type())
 	{
 	case FUSE_NX_HW_TYPE_ICOSA:
-		sku = "Icosa (Erista)";
+		sku = "Icosa - Odin";
 		break;
 	case FUSE_NX_HW_TYPE_IOWA:
-		sku = "Iowa (Mariko)";
+		sku = "Iowa - Modin";
 		break;
 	case FUSE_NX_HW_TYPE_HOAG:
-		sku = "Hoag (Mariko)";
+		sku = "Hoag - Vali";
 		break;
 	case FUSE_NX_HW_TYPE_AULA:
-		sku = "Aula (Mariko)";
+		sku = "Aula - Fric";
 		break;
 	default:
 		sku = "#FF8000 Unknown#";
@@ -587,7 +587,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "16.0.0 - 16.1.0");
 		break;
 	case 19:
-		strcpy(fuses_hos_version, "17.0.0+");
+		strcpy(fuses_hos_version, "17.0.0 - 18.1.0");
+		break;
+	case 20:
+		strcpy(fuses_hos_version, "19.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
@@ -611,10 +614,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
+		"%02X - %s - M%d A%02d\n"
+		"%X - %s - %s\n%02d - %s\n%d | %d - HOS: %s\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d (%d)\n%d (%d)\n%d (%d)\n"
-		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n"
-		"ID: %02X, Major: %d, Minor: A%02d",
+		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d",
+		(chip_id >> 8) & 0xFF,
+		hw_get_chip_id() == GP_HIDREV_MAJOR_T210 ? "T210 (Erista)" : "T210B01 (Mariko)",
+		(chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF,
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
@@ -635,8 +641,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB) * 4,
 		FUSE(FUSE_GPU_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB) * 5,
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
-		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
+		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE));
 
 	lv_label_set_text(lb_val, txt_buf);
 
@@ -1754,7 +1759,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	emmc_gpt_parse(&gpt);
 
 	u32 idx = 0;
-	u32 lines_left = 20;
+	int lines_left = 20;
 	s_printf(txt_buf + strlen(txt_buf), "#FFBA00 Idx Name                      Size        Offset     Sectors#\n");
 	LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 	{
@@ -2302,10 +2307,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	lv_label_set_static_text(lb_desc2,
 		"#00DDFF Battery Charger IC Info:#\n"
-		"Input voltage limit:\n"
 		"Input current limit:\n"
-		"Min voltage limit:\n"
-		"Fast charge current limit:\n"
+		"System voltage limit:\n"
+		"Charge current limit:\n"
 		"Charge voltage limit:\n"
 		"Charge status:\n"
 		"Temperature status:\n\n"
@@ -2323,12 +2327,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
 	// Charger IC info.
-	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
-	s_printf(txt_buf, "\n%d mV\n", value);
-
 	int iinlim = 0;
 	bq24193_get_property(BQ24193_InputCurrentLimit, &iinlim);
-	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", iinlim);
+	s_printf(txt_buf, "\n%d mA\n", iinlim);
 
 	bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
@@ -2398,8 +2399,8 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	if (!usb_pd.pdo_no)
 		strcat(txt_buf, "\nNon PD");
 
-	// Limit to 5 profiles so it can fit.
-	usb_pd.pdo_no = MIN(usb_pd.pdo_no, 5);
+	// Limit to 6 profiles so it can fit.
+	usb_pd.pdo_no = MIN(usb_pd.pdo_no, 6);
 
 	for (u32 i = 0; i < usb_pd.pdo_no; i++)
 	{
