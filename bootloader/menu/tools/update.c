@@ -188,7 +188,7 @@ void clean_up()
 	printerCU("", "", 1); //flush print
 }
 
-void Update_SDT(){
+void update_std(){
 	//some test verify payload
 	if (sd_file_exists("StarDust/flags/ONE.flag"))
 	{

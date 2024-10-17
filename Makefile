@@ -12,7 +12,8 @@ include ./Versions.inc
 
 ################################################################################
 
-TARGET := hekate
+TARGET := payload
+BUILD_VER := 11
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
@@ -58,6 +59,11 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	elfload.o elfreloc_arm.o \
 )
 
+# Custom for Argon
+CFILES := $(foreach dir,bootloader/menu,$(notdir $(shell find $(dir) -name "*.c"))) sprintf.o touch.o
+OBJS := $(OBJS:$(BUILDDIR)/$(TARGET)/main.o=) $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
+#$(error $(OBJS))
+
 GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'
 FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
 
@@ -66,6 +72,7 @@ FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_VER_RL=$(BLVERSION_REL)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_VER_RL=$(NYXVERSION_REL)
+CUSTOMDEFINES += -DLOAD_BUILD_VER=$(BUILD_VER)
 
 # BDK defines.
 CUSTOMDEFINES += -DBDK_MALLOC_NO_DEFRAG -DBDK_MC_ENABLE_AHB_REDIRECT -DBDK_EMUMMC_ENABLE
@@ -119,10 +126,10 @@ clean: $(TOOLS)
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(NYXDIR):
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(LDRDIR): $(TARGET).bin
 	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin

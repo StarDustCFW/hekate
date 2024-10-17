@@ -41,6 +41,8 @@
 #define MAX_CHAR 100 typedef char string[MAX_CHAR + 1];
 
 extern char Sversion[4];
+extern void _stock_launch();
+//extern int _open_hekate();
 
 u32 brillo = 100;
 u32 brilloM = 50;
@@ -133,11 +135,6 @@ void gui_init_argon_boot(void)
 		f_unlink("bootloader/hekate_ipl.ini");
 		f_rename("bootloader/hekate_ipl.bkp", "bootloader/hekate_ipl.ini");
 	}
-	else
-	{
-		if (sd_file_size("bootloader/hekate_ipl.ini") == sd_file_size("bootloader/Stock"))
-			copyfile("bootloader/hekate_ipl.conf", "bootloader/hekate_ipl.ini");
-	}
 
 	//waith user input
 	if (sd_file_exists("StarDust/autobootecho.txt") & (Incac == 0) & (iamsafe != 1))
@@ -147,8 +144,8 @@ void gui_init_argon_boot(void)
 	if (sd_file_exists("StarDust/autobootecho.txt") && (!cancel_auto_chainloading) & (Incac == 0) & (iamsafe != 1))
 	{
 		//autoboot
-		if (strstr(Sversion, "A") != NULL)
-			launcher("StarDust/payloads/Atmosphere.bin");
+		if (strstr(Sversion, "fus") != NULL)
+			launcher("StarDust/payloads/fusee.bin");
 
 		if (strstr(Sversion, "S") != NULL)
 			launcher("StarDust/payloads/SXOS.bin");
@@ -240,7 +237,7 @@ void pre_load_menus(int menuses, bool StarUp)
 			}
 		}
 
-		create(menus[0], "Icons/Atmosphere.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/Atmosphere.bin");
+		create(menus[0], "Icons/Atmosphere.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/fusee.bin");
 		main_iconX = main_iconX + main_iconXS;
 
 		//			if(retir <= 1)
@@ -250,9 +247,12 @@ void pre_load_menus(int menuses, bool StarUp)
 		//			}
 
 		//create(menus[0], "Icons/SXOS.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/SXOS.bin");
-        create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))hekateOFW, (void *)0);
-		//
-		create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))hekateOFW, (void *)1);
+        // create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))_open_hekate, (void *)1);//
+		create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/hekate.bin");
+
+		create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
+		
+		
 		if (sd_file_exists("/switchroot/android/coreboot.rom"))
 			create(menus[0], "Icons/Android.bmp", 590, main_iconY - 30, (int (*)(void *))launcher, (void *)"/switchroot/android/coreboot.rom");
 		else if (sd_file_exists("/switchroot_android/coreboot.rom"))
@@ -275,7 +275,6 @@ void pre_load_menus(int menuses, bool StarUp)
 		else
 			create(menus[0], "Icons/Incognito.bmp", iconrowX, iconrowY, (int (*)(void *))tool_Menus, (void *)4);
 		iconrowX = iconrowX + iconrowXS;
-		//create(menus[0], "Icons/zHekate.bmp", iconrowX, iconrowY, (int (*)(void *))hekateOFW, (void *)0);
 		//	gui_menu_append_entry(menus[0],gui_create_menu_entry("",theme("Icons/Incognito.bmp"),iconrowX+700, iconrowY, 200 , 200,(int (*)(void *))tool_Menus, (void*)6));
 */
 
@@ -1264,33 +1263,6 @@ int uLaunch(u32 fil)
 	return 1;
 }
 
-void hekateOFW(u32 tipo) {
-	SDStrap();
-	if (tipo == 0)
-	{
-
-		if (sd_file_exists("bootloader/hekate_ipl.bkp"))
-		{
-			f_unlink("bootloader/hekate_ipl.ini");
-			f_rename("bootloader/hekate_ipl.bkp", "bootloader/hekate_ipl.ini");
-		}
-		else
-		{
-			copyfile("bootloader/hekate_ipl.conf", "bootloader/hekate_ipl.ini");
-		}
-	}
-
-	if (tipo == 1)
-	{
-		if (sd_file_size("bootloader/stock") != sd_file_size("bootloader/hekate_ipl.ini"))
-		{
-			f_rename("bootloader/hekate_ipl.ini", "bootloader/hekate_ipl.bkp");
-		}
-		copyfile("bootloader/stock", "bootloader/hekate_ipl.ini");
-	}
-	launcher("/StarDust/payloads/hekate.bin");
-}
-
 int launcher(char *path){
 	SDStrap();
 	gfx_swap_buffer();
@@ -1301,10 +1273,10 @@ int launcher(char *path){
 	u32 bootR = sd_file_size("boot.dat");
 
 	//Atmosphere
-    if(strstr(path,"Atmosphere") != NULL)
+    if(strstr(path,"fusee") != NULL)
     {
 		if (sd_file_exists ("StarDust/autobootecho.txt")||(btn_read() & BTN_VOL_UP))
-		sd_save_2_file("Atmosphere", 10, "StarDust/autobootecho.txt");
+		sd_save_2_file("fusee", 10, "StarDust/autobootecho.txt");
         if (bootF < bootR){
             copyfile("StarDust/boot_forwarder.dat","boot.dat");
         }

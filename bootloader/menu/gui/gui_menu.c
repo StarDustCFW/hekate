@@ -185,16 +185,16 @@ int gui_menu_boot(gui_menu_t *menu)
 				Sversion[2] = str[2];
 				Sversion[3] =  0;
 			}
-			if(strstr(Sversion,"A") != NULL)
+			if(strstr(Sversion,"fu") != NULL)
 			gfx_printf( "-> Atmosphere\n");
 
-			if(strstr(Sversion,"T") != NULL)
+			if(strstr(Sversion,"TW") != NULL)
 			gfx_printf( "-> Android\n");
 
-			if(strstr(Sversion,"U") != NULL)
+			if(strstr(Sversion,"Ub") != NULL)
 			gfx_printf( "-> Ubuntu\n");
 
-			if(strstr(Sversion,"S") != NULL)
+			if(strstr(Sversion,"SX") != NULL)
 			{gfx_printf( "-> SXOS\n"); }//isAMS = 0;
 
 			gfx_con_setcol( 0xFFF9F9F9, 0, 0xFF191414);

@@ -12,30 +12,82 @@ int llaunch_payload(char *path)
     _launch_payload(path, false, true);
 	return 1;
 }
+/*
+int _open_hekate(){
+	
+	sd_mount();
+	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+		_auto_launch();
+	
+	return 1;
+}
+*/
+void _stock_launch()
+{
+	display_backlight_brightness(0, 1000);
+
+	ini_sec_t *cfg_sec = NULL;
+	LIST_INIT(ini_stock);
+
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
+
+	if (!sd_mount())
+		goto parse_failed2;
+
+	// Parse main configuration.
+	ini_parse(&ini_stock, "StarDust/sys/Stock", false);
+	
+	//Get the firs entry
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_stock, link)
+	{
+		if (ini_sec->type == INI_COMMENT ||
+			ini_sec->type == INI_NEWLINE ||
+			!strcmp(ini_sec->name, "config"))
+			continue;
+		//set the 0 entry
+		cfg_sec = ini_sec;
+		break;
+	}
+
+	h_cfg.emummc_force_disable = true;
+
+parse_failed2:
+	if (!cfg_sec)
+	{
+		gfx_printf("\nPress any key...\n");
+		goto outd;
+	}
+
+	if (!hos_launch(cfg_sec)){}
+
+outd:
+	sd_end();
+	h_cfg.emummc_force_disable = false;
+	display_backlight_brightness(h_cfg.backlight, 1000);
+	btn_wait();
+}
+
 
 void takeoff(){
     //gfx_clear_buffer();
     display_backlight_brightness(h_cfg.backlight, 1000);
+	//h_cfg.updater2p = false;
 	/* Mount Sd card */
 	if (sd_mount())
 	{
         minerva_change_freq(FREQ_1600);//moverall("/amame", "/atmosphere", "*", "test");        cyper("payload.bin","payload.enc");cyper("payload.enc","payload_out.bin");msleep(5000);power_set_state(POWER_OFF);
-
-		Update_SDT();
+		
+		//Update And Clean
+		update_std();
 		clean_up();
         
 		/* Cofigure touch input */
 		touch_power_on();
-        // emummc_load_cfg();
-        
-        // gfx_con.fntsz = 16;
-		// gfx_printf( "No sd card found...\n");
-        // gfx_printf("Something go Wrong\n\n");
-        // msleep(5000); // Guard against injection VOL+.
+        emummc_load_cfg();
 
-        
+		//summon Menu
 		gui_init_argon_boot();
-		//gui_init_argon_menu();
         
 	}
 	else
@@ -48,6 +100,7 @@ void takeoff(){
 	}
 }
 
+// Alternative main() function
 void ipl_main2()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
@@ -123,7 +176,8 @@ skip_lp0_minerva_config:
 //	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
 //		_auto_launch();
 
-	// Failed to launch Nyx, unmount SD Card.
+	
+	// Failed to launch Argon, unmount SD Card.
 	sd_end();
 
 	// Set ram to a freq that doesn't need periodic training.
