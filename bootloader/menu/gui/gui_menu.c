@@ -185,7 +185,7 @@ int gui_menu_boot(gui_menu_t *menu)
 				Sversion[2] = str[2];
 				Sversion[3] =  0;
 			}
-			if(strstr(Sversion,"fu") != NULL)
+			if(strstr(Sversion,"fu") != NULL || strstr(Sversion, "Atm") != NULL )
 			gfx_printf( "-> Atmosphere\n");
 
 			if(strstr(Sversion,"TW") != NULL)

@@ -42,7 +42,6 @@
 
 extern char Sversion[4];
 extern void _stock_launch();
-//extern int _open_hekate();
 
 u32 brillo = 100;
 u32 brilloM = 50;
@@ -68,16 +67,6 @@ u32 iamsafe=0;
 
 gui_menu_t *menus[max_menu];
 
-/*
-gui_menu_t **menu;
-gui_menu_t *menu_0;
-gui_menu_t *menu_1;
-gui_menu_t *menu_2;
-gui_menu_t *menu_3;
-gui_menu_t *menu_4;
-gui_menu_t *menu_5;
-
-*/
 
 void upd_menus(){
     menus[0] = gui_menu_create("ArgonNX","background.bmp");
@@ -144,7 +133,7 @@ void gui_init_argon_boot(void)
 	if (sd_file_exists("StarDust/autobootecho.txt") && (!cancel_auto_chainloading) & (Incac == 0) & (iamsafe != 1))
 	{
 		//autoboot
-		if (strstr(Sversion, "fus") != NULL)
+		if (strstr(Sversion, "fus") != NULL || strstr(Sversion, "Atm") != NULL )
 			launcher("StarDust/payloads/fusee.bin");
 
 		if (strstr(Sversion, "S") != NULL)
@@ -164,7 +153,7 @@ void gui_init_argon_boot(void)
 
 	if (btn_read() & BTN_VOL_DOWN)
 		f_unlink("StarDust/autobootecho.txt");
-	gui_init_argon_menu();
+
 }
 
 
@@ -247,7 +236,6 @@ void pre_load_menus(int menuses, bool StarUp)
 		//			}
 
 		//create(menus[0], "Icons/SXOS.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/SXOS.bin");
-        // create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))_open_hekate, (void *)1);//
 		create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/hekate.bin");
 
 		create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
@@ -640,6 +628,7 @@ void pre_load_menus(int menuses, bool StarUp)
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
+	gui_init_argon_boot();
 	//main menu loop
     while(true){
         change_brightness(0);

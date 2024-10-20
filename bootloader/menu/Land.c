@@ -12,62 +12,87 @@ int llaunch_payload(char *path)
     _launch_payload(path, false, true);
 	return 1;
 }
-/*
-int _open_hekate(){
+extern u32 _find_section_name(char *lbuf, u32 lblen, char schar);
+extern ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type);
+
+void cfg_add(ini_sec_t *cfg_sec, const char *line) {
 	
-	sd_mount();
-	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-		_auto_launch();
-	
-	return 1;
+	//if (!cfg_sec) cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
+
+    char lbuf[512];
+    // Copiar la línea a lbuf, asegurándote de no exceder el tamaño de lbuf.
+    strncpy(lbuf, line, sizeof(lbuf) - 1);
+    // Asegurarse de que la cadena esté terminada en nulo
+    lbuf[sizeof(lbuf) - 1] = '\0';
+
+    // Encuentra el índice del separador '=' en lbuf.
+    u32 i = _find_section_name(lbuf, strlen(lbuf), '=');
+
+    // Calcular los tamaños de clave y valor.
+    u32 klen  = strlen(&lbuf[0]) + 1;
+    u32 vlen  = strlen(&lbuf[i + 1]) + 1;
+    
+    // Asignar memoria para ini_kv_t, la clave y el valor.
+    char *buf = zalloc(sizeof(ini_kv_t) + klen + vlen);
+
+    ini_kv_t *kv = (ini_kv_t *)buf;
+    buf += sizeof(ini_kv_t);
+
+    // Copiar la clave y el valor en el buffer asignado.
+    kv->key = strcpy_ns(buf, &lbuf[0]);
+    buf += klen;
+    kv->val = strcpy_ns(buf, &lbuf[i + 1]);
+
+    // Añadir la clave-valor a la lista en cfg_sec.
+    list_append(&cfg_sec->kvs, &kv->link);
 }
-*/
-void _stock_launch()
+
+void _cfg_launch(ini_sec_t *cfg_sec)
 {
 	display_backlight_brightness(0, 1000);
 
-	ini_sec_t *cfg_sec = NULL;
-	LIST_INIT(ini_stock);
-
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
-
-	if (!sd_mount())
-		goto parse_failed2;
-
-	// Parse main configuration.
-	ini_parse(&ini_stock, "StarDust/sys/Stock", false);
+	sd_mount();
 	
-	//Get the firs entry
-	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_stock, link)
-	{
-		if (ini_sec->type == INI_COMMENT ||
-			ini_sec->type == INI_NEWLINE ||
-			!strcmp(ini_sec->name, "config"))
-			continue;
-		//set the 0 entry
-		cfg_sec = ini_sec;
-		break;
-	}
-
-	h_cfg.emummc_force_disable = true;
-
-parse_failed2:
 	if (!cfg_sec)
 	{
+		gfx_printf("\ncfg_sec NULL ?...\n");
+		msleep(2000);
+	}
+	if (!hos_launch(cfg_sec)){
+		gfx_printf("\nStock Failed to Launch\n");
 		gfx_printf("\nPress any key...\n");
-		goto outd;
 	}
 
-	if (!hos_launch(cfg_sec)){}
 
-outd:
-	sd_end();
+	//sd_end();
 	h_cfg.emummc_force_disable = false;
 	display_backlight_brightness(h_cfg.backlight, 1000);
+	msleep(2000);
 	btn_wait();
 }
 
+void _cfw(bool emummc)
+{
+	ini_sec_t *cfg_sec = NULL;
+	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
+	cfg_add(cfg_sec, "fss0=atmosphere/package3");
+	cfg_add(cfg_sec, "kip1patch=nosigchk");
+	if(emummc) cfg_add(cfg_sec, "emummcforce=1");
+	h_cfg.emummc_force_disable = !emummc;
+	_cfg_launch(cfg_sec);
+}
+
+void _stock_launch()
+{
+	ini_sec_t *cfg_sec = NULL;
+	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
+	cfg_add(cfg_sec, "fss0=atmosphere/package3");
+	cfg_add(cfg_sec, "stock=1");
+	h_cfg.emummc_force_disable = true;
+	_cfg_launch(cfg_sec);
+}
 
 void takeoff(){
     //gfx_clear_buffer();
@@ -87,7 +112,8 @@ void takeoff(){
         emummc_load_cfg();
 
 		//summon Menu
-		gui_init_argon_boot();
+		gui_init_argon_menu();
+		//gui_init_argon_boot();
         
 	}
 	else
@@ -168,13 +194,14 @@ skip_lp0_minerva_config:
 	if (h_cfg.t210b01)
 		_r2c_get_config_t210b01();
 
-    takeoff();
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	//_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-//	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-//		_auto_launch();
+	// if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+		// _auto_launch();
+
+    takeoff();
 
 	
 	// Failed to launch Argon, unmount SD Card.
