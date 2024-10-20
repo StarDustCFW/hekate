@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stdlib.h>
+
 #include "power/max17050.h"
 #include <string.h>
 #include "gui_argon_menu.h"
@@ -32,6 +34,7 @@
 #include "mem/heap.h"
 //#include "minerva/minerva.h"
 #include "../tools/tools.h"
+#include "../../storage/emummc.h"
 
 #define COLUMNS 4
 #define ROWS 2
@@ -40,8 +43,12 @@
 #define MARGIN_LEFT 46
 #define MAX_CHAR 100 typedef char string[MAX_CHAR + 1];
 
+//extern hekate_config h_cfg;
+extern emummc_cfg_t emu_cfg;
+
 extern char Sversion[4];
 extern void _stock_launch();
+extern void _cfw(bool emummc);
 
 u32 brillo = 100;
 u32 brilloM = 50;
@@ -57,11 +64,11 @@ int main_menu = 0;
 u64 low_icons = 645;
 
 //some indicators
-u32 retir = 0;
 u32 Incac = 0;
 u32 servstep = 0;
 u32 isAMS = 1;
 u32 iamsafe=0;
+bool syspatch = true;
 
 #define max_menu 4 
 
@@ -82,6 +89,9 @@ void gui_init_argon_boot(void)
     
     //Iinit Menus
     upd_menus();
+	
+	// Syspatch status
+	syspatch = sd_file_exists("/atmosphere/contents/420000000000000B/flags/boot2.flag");
 
 	/* Init pool for menu */
 	if (sd_file_exists("StarDust/autoboot.inc"))
@@ -124,7 +134,7 @@ void gui_init_argon_boot(void)
 		f_unlink("bootloader/hekate_ipl.ini");
 		f_rename("bootloader/hekate_ipl.bkp", "bootloader/hekate_ipl.ini");
 	}
-
+ 
 	//waith user input
 	if (sd_file_exists("StarDust/autobootecho.txt") & (Incac == 0) & (iamsafe != 1))
 		btn_wait_timeout(1000, BTN_VOL_UP);
@@ -156,7 +166,6 @@ void gui_init_argon_boot(void)
 
 }
 
-
 void pre_load_menus(int menuses, bool StarUp)
 {
 	SDStrap();
@@ -170,77 +179,31 @@ void pre_load_menus(int menuses, bool StarUp)
 
 		//Create emummc icon
 		u32 buttonY = main_iconY - 67;
-		if (sd_file_exists("emummc/emummc.ini"))
-		{
-			char *str = read_file_string("emummc/emummc.ini");
-			u32 count = strlen(str)-1;
-			if (str[count] != '\n'){
-				while (true) {
-					if (count==0) break;
-					if (str[count] == '\n'){
-						str[count]='\n';
-						str[count+1]='\n';
-
-						sd_save_2_file(str, count+2, "emummc/emummc.ini");
-						break;
-					}
-					str[count]='\0';
-					count--;
-				}
-			}
-
-			if (retir == 0)
-			{
-				if (strstr(str, "emummc_") != NULL)
-				{
-					str = str_replace(str, "emummc_", "");
-					u32 size = strlen(str);
-					str[size]=0;
-					str[size]='\n';
-					sd_save_2_file(str, size, "emummc/emummc.ini");
-				}
-
-				if (strstr(str, " ") != NULL)
-				{
-					str = str_replace(str, " ", "");
-					u32 size = strlen(str);
-					str[size]=0;
-					str[size]='\n';
-					sd_save_2_file(str, size, "emummc/emummc.ini");
-				}
-				retir = 1;
-				if (strstr(str, "enabled=1") != NULL)
-				{
-					retir = 2;
-				}
-			}
-
-			if (retir == 2)
-			{
-				//				main_iconX = main_iconX + main_iconXS/2;
+		if (sd_file_exists("emummc/emummc.ini")){
+			if(emu_cfg.enabled) {
+				// main_iconX = main_iconX + main_iconXS/2;
 				create(menus[0], "Icons/bon.bmp", main_iconX + 50, buttonY, (int (*)(void *))tool_emu, (void *)0); //- 80, - 500
-			}
-			else
-			{
+			} else {
 				create(menus[0], "Icons/boff.bmp", main_iconX + 50, buttonY, (int (*)(void *))tool_emu, (void *)1); //- 80, - 500
 			}
 		}
 
+		// Atmosphere Boot
 		create(menus[0], "Icons/Atmosphere.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/fusee.bin");
+		
 		main_iconX = main_iconX + main_iconXS;
 
-		//			if(retir <= 1)
 		//			{
 		//			gui_menu_append_entry(menus[0],gui_create_menu_entry("",theme("Icons/ReiNX.bmp"), main_iconX, main_iconY, 300 , 300,(int (*)(void *))launcher, (void*)"/StarDust/payloads/ReiNX.bin"));
 		main_iconX = main_iconX + main_iconXS;
 		//			}
 
-		//create(menus[0], "Icons/SXOS.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/SXOS.bin");
-		create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/hekate.bin");
-
+		// Stock Boot
 		create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
+		//create(menus[0], "Icons/SXOS.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/SXOS.bin");
+
 		
-		
+		// Android and Ubuntu 
 		if (sd_file_exists("/switchroot/android/coreboot.rom"))
 			create(menus[0], "Icons/Android.bmp", 590, main_iconY - 30, (int (*)(void *))launcher, (void *)"/switchroot/android/coreboot.rom");
 		else if (sd_file_exists("/switchroot_android/coreboot.rom"))
@@ -248,7 +211,9 @@ void pre_load_menus(int menuses, bool StarUp)
 
 		if (sd_file_exists("/switchroot/ubuntu/coreboot.rom"))
 			create(menus[0], "Icons/Ubuntu.bmp", 590, main_iconY + 230, (int (*)(void *))launcher, (void *)"/switchroot/ubuntu/coreboot.rom");
-		//
+		
+		// Hekate icon
+		create(menus[0], "Icons/Hekate.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/hekate.bin");
 /*
 		u64 iconrowY = low_icons-5;
 		u64 iconrowX = 130;
@@ -628,6 +593,7 @@ void pre_load_menus(int menuses, bool StarUp)
 /* Init needed menus for ArgonNX */
 void gui_init_argon_menu(void)
 {
+	// Start Instruction
 	gui_init_argon_boot();
 	//main menu loop
     while(true){
@@ -718,6 +684,66 @@ int tool_extr_rSD(void *param)
 	return 0;
 }
 
+//Save emummc
+void save_emummc_cfg(){
+	char lbuf[16];
+/*
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
+
+	itoa(emu_cfg.enabled, lbuf, 10);
+	gfx_printf("%s\n",lbuf);
+	
+	itoa(emu_cfg.sector, lbuf, 16);
+	gfx_printf("%s\n",lbuf);
+	
+	itoa(emu_cfg.id, lbuf, 16);
+	gfx_printf("%s\n",lbuf);
+
+	gfx_printf("%s\n",emu_cfg.path);
+	gfx_printf("%s\n",emu_cfg.nintendo_path);
+    msleep(6000); // Guard against injection VOL+.
+	//return;
+	// Internal.
+*/
+	sd_mount();
+
+	FIL fp;
+
+	if (f_open(&fp, "emuMMC/emummc.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+		return;
+
+	// Add config entry.
+	f_puts("[emummc]\nenabled=", &fp);
+	itoa(emu_cfg.enabled, lbuf, 10);
+	f_puts(lbuf, &fp);
+	
+	if(emu_cfg.sector != 0){
+		f_puts("\nsector=0x", &fp);
+		itoa(emu_cfg.sector, lbuf, 16);
+		f_puts(lbuf, &fp);
+	}
+	
+	if(emu_cfg.id != 0){
+		f_puts("\nid=0x", &fp);
+		itoa(emu_cfg.sector, lbuf, 16);
+		f_puts(lbuf, &fp);
+	}
+
+	if (emu_cfg.path)
+	{
+		f_puts("\npath=", &fp);
+		f_puts(emu_cfg.path, &fp);
+	}
+
+	f_puts("\nnintendo_path=", &fp);
+	f_puts(emu_cfg.nintendo_path, &fp);
+	
+	f_puts("\n", &fp);
+
+	f_close(&fp);
+}
+
 //Emu tool
 int tool_emu(u32 status)
 {
@@ -803,7 +829,7 @@ int tool_emu(u32 status)
 			f_unlink("emuMMC/EF00/file_based");
 			f_unlink("/emuMMC/EF00");
 			f_unlink("emummc");
-			retir = 0;
+			emu_cfg.enabled=0;
 			pre_load_menus(1, 1);
 		}
 
@@ -821,45 +847,14 @@ int tool_emu(u32 status)
 		f_puts("sector=0x2\n", &fp);
 		f_puts("nintendo_path=Emutendo\n", &fp);
 		f_close(&fp);
+		emummc_load_cfg();
 		pre_load_menus(1, 1);
 	}
 
-	if (status == 1)
+	if (status == 0 || status == 1 )
 	{
-		char *str1 = read_file_string("emummc/emummc.ini");
-		char *payload_wo_bin = str_replace(str1, "enabled=0", "enabled=1");
-		FIL op;
-		f_open(&op, "emummc/emummc.ini", FA_READ);
-		u32 size = f_size(&op);
-		f_close(&op);
-		printerCU(payload_wo_bin,"",5000);
-//		payload_wo_bin[size]='\0';
-//		payload_wo_bin[size]='\n';
-		payload_wo_bin[size]=0;
-		payload_wo_bin[size]='\n';
-		//printerCU(payload_wo_bin,"",5000);
-
-		sd_save_2_file(payload_wo_bin, size, "emummc/emummc.ini");
-		retir = 2;
-		pre_load_menus(0, 0);
-	}
-
-	if (status == 0)
-	{
-		char *str1 = read_file_string("emummc/emummc.ini");
-		char *payload_wo_bin = str_replace(str1, "enabled=1", "enabled=0");
-		FIL op;
-		f_open(&op, "emummc/emummc.ini", FA_READ);
-		u32 size = f_size(&op);
-		f_close(&op);
-		printerCU(payload_wo_bin,"",5000);
-//		payload_wo_bin[size]='\0';
-//		payload_wo_bin[size]='\n';
-		payload_wo_bin[size]=0;
-		payload_wo_bin[size]='\n';
-		sd_save_2_file(payload_wo_bin, size, "emummc/emummc.ini");
-		retir = 1;
-		//printerCU(payload_wo_bin,"",5000);
+		emu_cfg.enabled=status;
+		save_emummc_cfg();
 		pre_load_menus(0, 0);
 	}
 
@@ -1085,7 +1080,7 @@ void serv_display(gui_menu_t *menut, char *titleid, char *name)
 	if (isAMS)
         s_printf(path, "/atmosphere/contents/%s",titleid);
 	else
-        s_printf(path, "sxos/titles/%s",titleid);
+        s_printf(path, "/sxos/titles/%s",titleid);
 
     
 	char flagpath[100];
@@ -1257,20 +1252,31 @@ int launcher(char *path){
 	gfx_swap_buffer();
 	display_backlight_brightness(30, 1000);	
 
-	u32 bootS = sd_file_size("StarDust/boot.dat");
-	u32 bootF = sd_file_size("StarDust/boot_forwarder.dat");
-	u32 bootR = sd_file_size("boot.dat");
+	//u32 bootS = sd_file_size("StarDust/boot.dat");
 
 	//Atmosphere
     if(strstr(path,"fusee") != NULL)
     {
+		u32 bootF = sd_file_size("StarDust/boot_forwarder.dat");
+		u32 bootR = sd_file_size("boot.dat");
 		if (sd_file_exists ("StarDust/autobootecho.txt")||(btn_read() & BTN_VOL_UP))
 		sd_save_2_file("fusee", 10, "StarDust/autobootecho.txt");
+	
         if (bootF < bootR){
             copyfile("StarDust/boot_forwarder.dat","boot.dat");
         }
+		
+		//Reboot to payload
+		u32 pay1 = sd_file_size("payload.bin");
+		u32 pay2 = sd_file_size("atmosphere/reboot_payload.bin");
+		if (pay1 != pay2){
+			copyfile("payload.bin","atmosphere/reboot_payload.bin");
+		}
+		
+		if(!syspatch)
+			_cfw(emu_cfg.enabled);
     }
-	
+/*
 	//SxOS
     if((strstr(path,"sxos") != NULL) || (strstr(path,"SXOS") != NULL))
     {
@@ -1287,7 +1293,7 @@ int launcher(char *path){
 		if (sd_file_exists ("StarDust/autobootecho.txt")||(btn_read() & BTN_VOL_UP))
 		sd_save_2_file("SXOS", 4, "StarDust/autobootecho.txt");
 	}
-
+*/
     if(strstr(path,"android") != NULL)
     {
 		if (sd_file_exists ("StarDust/autobootecho.txt")||(btn_read() & BTN_VOL_UP))

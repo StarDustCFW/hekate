@@ -97,7 +97,7 @@ void _stock_launch()
 void takeoff(){
     //gfx_clear_buffer();
     display_backlight_brightness(h_cfg.backlight, 1000);
-	//h_cfg.updater2p = false;
+	//h_cfg.updater2p = 0;
 	/* Mount Sd card */
 	if (sd_mount())
 	{
@@ -113,7 +113,6 @@ void takeoff(){
 
 		//summon Menu
 		gui_init_argon_menu();
-		//gui_init_argon_boot();
         
 	}
 	else

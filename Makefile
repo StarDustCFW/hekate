@@ -13,7 +13,7 @@ include ./Versions.inc
 ################################################################################
 
 TARGET := payload
-BUILD_VER := 11
+BUILD_VER := 12
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
