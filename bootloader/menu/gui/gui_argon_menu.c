@@ -128,16 +128,10 @@ void gui_init_argon_boot(void)
 		f_unlink("/atmosphere/contents/0100000000001013/exefs.on");
 	}
 
-	//prevent accidental boot to ofw
-	if (sd_file_exists("bootloader/hekate_ipl.bkp"))
-	{
-		f_unlink("bootloader/hekate_ipl.ini");
-		f_rename("bootloader/hekate_ipl.bkp", "bootloader/hekate_ipl.ini");
-	}
  
-	//waith user input
+	// Wait user input
 	if (sd_file_exists("StarDust/autobootecho.txt") & (Incac == 0) & (iamsafe != 1))
-		btn_wait_timeout(1000, BTN_VOL_UP);
+		btn_wait_timeout(500, BTN_VOL_UP);
 
 	bool cancel_auto_chainloading = btn_read() & BTN_VOL_UP;
 	if (sd_file_exists("StarDust/autobootecho.txt") && (!cancel_auto_chainloading) & (Incac == 0) & (iamsafe != 1))
@@ -178,13 +172,13 @@ void pre_load_menus(int menuses, bool StarUp)
 		u32 main_iconXS = 300;
 
 		//Create emummc icon
-		u32 buttonY = main_iconY - 67;
+		//u32 buttonY = main_iconY - 70;
 		if (sd_file_exists("emummc/emummc.ini")){
 			if(emu_cfg.enabled) {
 				// main_iconX = main_iconX + main_iconXS/2;
-				create(menus[0], "Icons/bon.bmp", main_iconX + 50, buttonY, (int (*)(void *))tool_emu, (void *)0); //- 80, - 500
+				create(menus[0], "Icons/bon.bmp", main_iconX + 50, low_icons-5, (int (*)(void *))tool_emu, (void *)0); //- 80, - 500
 			} else {
-				create(menus[0], "Icons/boff.bmp", main_iconX + 50, buttonY, (int (*)(void *))tool_emu, (void *)1); //- 80, - 500
+				create(menus[0], "Icons/boff.bmp", main_iconX + 50, low_icons-5, (int (*)(void *))tool_emu, (void *)1); //- 80, - 500
 			}
 		}
 
@@ -192,14 +186,13 @@ void pre_load_menus(int menuses, bool StarUp)
 		create(menus[0], "Icons/Atmosphere.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/fusee.bin");
 		
 		main_iconX = main_iconX + main_iconXS;
+		//gui_menu_append_entry(menus[0],gui_create_menu_entry("",theme("Icons/ReiNX.bmp"), main_iconX, main_iconY, 300 , 300,(int (*)(void *))launcher, (void*)"/StarDust/payloads/ReiNX.bin"));
+		create(menus[0], "Icons/Stock.bmp", main_iconX + 50, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
 
-		//			{
-		//			gui_menu_append_entry(menus[0],gui_create_menu_entry("",theme("Icons/ReiNX.bmp"), main_iconX, main_iconY, 300 , 300,(int (*)(void *))launcher, (void*)"/StarDust/payloads/ReiNX.bin"));
 		main_iconX = main_iconX + main_iconXS;
-		//			}
 
 		// Stock Boot
-		create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
+		//create(menus[0], "Icons/Stock.bmp", 540, main_iconY + 100, (int (*)(void *))_stock_launch, (void *)1);
 		//create(menus[0], "Icons/SXOS.bmp", main_iconX, main_iconY, (int (*)(void *))launcher, (void *)"/StarDust/payloads/SXOS.bin");
 
 		
@@ -231,7 +224,7 @@ void pre_load_menus(int menuses, bool StarUp)
 		//	gui_menu_append_entry(menus[0],gui_create_menu_entry("",theme("Icons/Incognito.bmp"),iconrowX+700, iconrowY, 200 , 200,(int (*)(void *))tool_Menus, (void*)6));
 */
 
-		create(menus[0], "Icons/SD.bmp", 10, low_icons, tool_extr_rSD, NULL);
+		create(menus[0], "Icons/SD.bmp", 15, low_icons, tool_extr_rSD, NULL);
 		//create(menus[0], "Icons/rcm.bmp", 700, low_icons, (int (*)(void *))launcher, (void *)"payload.bin");
 		if (iamsafe == 0)
 			create(menus[0], "Icons/themes.bmp", 605, low_icons, tool_menu_rem, NULL);
@@ -1077,12 +1070,13 @@ void serv_display(gui_menu_t *menut, char *titleid, char *name)
 
 	char path[100];
 
-	if (isAMS)
-        s_printf(path, "/atmosphere/contents/%s",titleid);
-	else
-        s_printf(path, "/sxos/titles/%s",titleid);
+	if (isAMS){
+		s_printf(path, "/atmosphere/contents/%s",titleid);
+	} else {
+		s_printf(path, "sxos/titles/%s",titleid);
+	}
+        
 
-    
 	char flagpath[100];
     s_printf(flagpath, "%s/flags/boot2.flag",path);
     s_printf(path, "%s/exefs.nsp",path);
