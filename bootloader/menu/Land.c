@@ -5,93 +5,12 @@
 #include "tools/update.h"
 #include "tools/tools.h"
 #include "input/touch.h"
-
+#include "Land.h"
 
 int llaunch_payload(char *path)
 {
     _launch_payload(path, false, true);
 	return 1;
-}
-extern u32 _find_section_name(char *lbuf, u32 lblen, char schar);
-extern ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type);
-
-void cfg_add(ini_sec_t *cfg_sec, const char *line) {
-	
-	//if (!cfg_sec) cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
-
-    char lbuf[512];
-    // Copiar la línea a lbuf, asegurándote de no exceder el tamaño de lbuf.
-    strncpy(lbuf, line, sizeof(lbuf) - 1);
-    // Asegurarse de que la cadena esté terminada en nulo
-    lbuf[sizeof(lbuf) - 1] = '\0';
-
-    // Encuentra el índice del separador '=' en lbuf.
-    u32 i = _find_section_name(lbuf, strlen(lbuf), '=');
-
-    // Calcular los tamaños de clave y valor.
-    u32 klen  = strlen(&lbuf[0]) + 1;
-    u32 vlen  = strlen(&lbuf[i + 1]) + 1;
-    
-    // Asignar memoria para ini_kv_t, la clave y el valor.
-    char *buf = zalloc(sizeof(ini_kv_t) + klen + vlen);
-
-    ini_kv_t *kv = (ini_kv_t *)buf;
-    buf += sizeof(ini_kv_t);
-
-    // Copiar la clave y el valor en el buffer asignado.
-    kv->key = strcpy_ns(buf, &lbuf[0]);
-    buf += klen;
-    kv->val = strcpy_ns(buf, &lbuf[i + 1]);
-
-    // Añadir la clave-valor a la lista en cfg_sec.
-    list_append(&cfg_sec->kvs, &kv->link);
-}
-
-void _cfg_launch(ini_sec_t *cfg_sec)
-{
-	display_backlight_brightness(0, 1000);
-
-	gfx_clear_grey(0x1B);
-	gfx_con_setpos(0, 0);
-	sd_mount();
-	
-	if (!cfg_sec)
-	{
-		gfx_printf("\ncfg_sec NULL ?...\n");
-		msleep(2000);
-	}
-	if (!hos_launch(cfg_sec)){
-		gfx_printf("\nStock Failed to Launch\n");
-		gfx_printf("\nPress any key...\n");
-	}
-
-
-	//sd_end();
-	h_cfg.emummc_force_disable = false;
-	display_backlight_brightness(h_cfg.backlight, 1000);
-	msleep(2000);
-	btn_wait();
-}
-
-void _cfw(bool emummc)
-{
-	ini_sec_t *cfg_sec = NULL;
-	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
-	cfg_add(cfg_sec, "fss0=atmosphere/package3");
-	cfg_add(cfg_sec, "kip1patch=nosigchk");
-	if(emummc) cfg_add(cfg_sec, "emummcforce=1");
-	h_cfg.emummc_force_disable = !emummc;
-	_cfg_launch(cfg_sec);
-}
-
-void _stock_launch()
-{
-	ini_sec_t *cfg_sec = NULL;
-	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
-	cfg_add(cfg_sec, "fss0=atmosphere/package3");
-	cfg_add(cfg_sec, "stock=1");
-	h_cfg.emummc_force_disable = true;
-	_cfg_launch(cfg_sec);
 }
 
 void takeoff(){
@@ -110,6 +29,17 @@ void takeoff(){
 		/* Cofigure touch input */
 		touch_power_on();
         emummc_load_cfg();
+        
+        //sd_save_2_file("", 0, "StarDust/flags/TAKEOVER.flag");
+        if (sd_file_exists("StarDust/flags/TAKEOVER.flag"))
+        {
+            f_unlink("StarDust/flags/TAKEOVER.flag");
+
+        	u8 *buf = zalloc(0x200);
+			is_ipl_updated(buf, "payload.bin", true);
+			//is_ipl_updated(buf, "atmosphere/reboot_payload.bin", true);
+			free(buf);
+        }
 
 		//summon Menu
 		gui_init_argon_menu();
@@ -195,6 +125,7 @@ skip_lp0_minerva_config:
 
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	//_show_errors();
+    fix_errors();
 
 	// Load saved configuration and auto boot if enabled.
 	// if (!(h_cfg.errors & ERR_SD_BOOT_EN))
