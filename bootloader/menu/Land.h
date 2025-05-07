@@ -112,9 +112,9 @@ void fix_errors()
 	rpt->magic = 0;
     if(fixed) {
         gfx_printf("\n\nFixed.....\n");
-        msleep(200);
-        gfx_printf("\n\nRebooting.....\n");
         msleep(800);
+        gfx_printf("\n\nRebooting.....\n");
+        msleep(1800);
         return;
     }
     
@@ -194,8 +194,11 @@ void _cfg_launch(ini_sec_t *cfg_sec)
 void _cfw(bool emummc)
 {
 	ini_sec_t *cfg_sec = NULL;
-	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
+    char head[100]; strcpy(head, "Atmosphere CFW");
+	cfg_sec = _ini_create_section(NULL, NULL, head, INI_CHOICE);
 	cfg_add(cfg_sec, "fss0=atmosphere/package3");
+	cfg_add(cfg_sec, "atmosphere=1");
+	//cfg_add(cfg_sec, "exofatal=/payload.bin");
 	cfg_add(cfg_sec, "kip1patch=nosigchk");
 	if(emummc) cfg_add(cfg_sec, "emummcforce=1");
 	h_cfg.emummc_force_disable = !emummc;

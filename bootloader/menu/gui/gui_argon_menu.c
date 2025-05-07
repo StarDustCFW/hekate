@@ -1267,6 +1267,7 @@ int launcher(char *path){
 			copyfile("payload.bin","atmosphere/reboot_payload.bin");
 		}
 		
+		syspatch = sd_file_exists("/atmosphere/contents/420000000000000B/flags/boot2.flag");
 		if(!syspatch)
 			_cfw(emu_cfg.enabled);
     }

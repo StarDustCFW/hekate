@@ -13,7 +13,7 @@ include ./Versions.inc
 ################################################################################
 
 TARGET := payload
-BUILD_VER := 13
+BUILD_VER := 14
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
@@ -61,7 +61,9 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Custom for Argon
 CFILES := $(foreach dir,bootloader/menu,$(notdir $(shell find $(dir) -name "*.c"))) sprintf.o touch.o
-OBJS := $(OBJS:$(BUILDDIR)/$(TARGET)/main.o=) $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
+DEL := main.o logos.o
+OBJS := $(filter-out $(addprefix $(BUILDDIR)/$(TARGET)/, $(DEL)), $(OBJS))
+OBJS := $(OBJS) $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
 #$(error $(OBJS))
 
 GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'

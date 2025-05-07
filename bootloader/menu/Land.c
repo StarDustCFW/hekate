@@ -6,7 +6,7 @@
 #include "tools/tools.h"
 #include "input/touch.h"
 #include "Land.h"
-
+u8 battery_icons_blz[] = {};
 int llaunch_payload(char *path)
 {
     _launch_payload(path, false, true);
