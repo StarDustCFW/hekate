@@ -236,6 +236,33 @@ void fix_emu()
 	sd_save_2_file("", 0, "emuMMC/EF00/file_based");
 }
 
+
+void CheckLogs(char* directory) {
+    if (!sd_file_exists(directory)) return;
+    char* files = listfil(directory, "*.log", true); // o "*" si no hay extensión fija
+	if (!files) return;
+
+    u32 i = 0;
+    while (files[i * 256] != 0) {
+        char* fname = &files[i * 256];
+        
+		char sourcefile[256];
+        s_printf(sourcefile, "%s/%s",directory,&files[i * 256]);
+        
+		// Comprobamos si el nombre contiene el patrón
+        if (strstr(fname, "0100000000001000")) {
+			f_unlink(sourcefile);
+			printerCU(sourcefile,"LOGS",0);
+			deleteall("/atmosphere/contents/0100000000001000/romfs/lyt", "*", "");
+			//msleep(5000);power_set_state(POWER_OFF);
+        }
+        i++;
+    }
+    free(files);
+}
+
+
+
 /*
 //Script Main
 //Simple Instruccion
@@ -251,7 +278,7 @@ void fix_emu()
 	+ Make Folder or file with the contents of Clipboard with < can be 0 bytes
 	- Delete files or folders
 		* Set name of file to delete recursive,  * is for all, only for folders with /
-	
+	_ cyper
 	add / at the end of the line to delimtate if is a folder
 
 */

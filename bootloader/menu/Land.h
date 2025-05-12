@@ -178,7 +178,9 @@ void _cfg_launch(ini_sec_t *cfg_sec)
 		gfx_printf("\ncfg_sec NULL ?...\n");
 		msleep(2000);
 	}
-	if (!hos_launch(cfg_sec)){
+	hos_launch(cfg_sec);
+    
+    {
 		gfx_printf("\nStock Failed to Launch\n");
 		gfx_printf("\nPress any key...\n");
 	}
@@ -196,8 +198,8 @@ void _cfw(bool emummc)
 	ini_sec_t *cfg_sec = NULL;
     char head[100]; strcpy(head, "Atmosphere CFW");
 	cfg_sec = _ini_create_section(NULL, NULL, head, INI_CHOICE);
-	cfg_add(cfg_sec, "fss0=atmosphere/package3");
-	cfg_add(cfg_sec, "atmosphere=1");
+	cfg_add(cfg_sec, "pkg3=atmosphere/package3");
+	cfg_add(cfg_sec, "kernelprocid=1");
 	//cfg_add(cfg_sec, "exofatal=/payload.bin");
 	cfg_add(cfg_sec, "kip1patch=nosigchk");
 	if(emummc) cfg_add(cfg_sec, "emummcforce=1");
@@ -209,7 +211,7 @@ void _stock_launch()
 {
 	ini_sec_t *cfg_sec = NULL;
 	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
-	cfg_add(cfg_sec, "fss0=atmosphere/package3");
+	cfg_add(cfg_sec, "pkg3=atmosphere/package3");
 	cfg_add(cfg_sec, "stock=1");
 	h_cfg.emummc_force_disable = true;
 	_cfg_launch(cfg_sec);

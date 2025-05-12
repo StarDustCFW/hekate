@@ -21,11 +21,14 @@ void takeoff(){
 	if (sd_mount())
 	{
         minerva_change_freq(FREQ_1600);//moverall("/amame", "/atmosphere", "*", "test");        cyper("payload.bin","payload.enc");cyper("payload.enc","payload_out.bin");msleep(5000);power_set_state(POWER_OFF);
-		
+        
 		//Update And Clean
 		update_std();
 		clean_up();
         
+        //Check for errors
+        CheckLogs("/atmosphere/crash_reports");
+
 		/* Cofigure touch input */
 		touch_power_on();
         emummc_load_cfg();
