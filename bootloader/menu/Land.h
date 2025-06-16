@@ -130,6 +130,93 @@ void fix_errors()
 	gfx_con_setpos(0, 0);
 }
 
+
+//mod payload
+void _launch_option(char *path, u8 opt)
+{
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
+
+	FIL fp;
+	if (f_open(&fp, path, FA_READ))
+	{
+		gfx_con.mute = false;
+		EPRINTFARGS("Payload file is missing!\n(%s)", path);
+
+		goto out;
+	}
+
+	// Read and copy the payload to our chosen address
+	void *buf;
+	u32 size = f_size(&fp);
+
+	if (size < 0x30000)
+		buf = (void *)RCM_PAYLOAD_ADDR;
+	else
+	{
+		coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
+		buf = coreboot_addr;
+		if (h_cfg.t210b01)
+		{
+			f_close(&fp);
+
+			gfx_con.mute = false;
+			EPRINTF("Coreboot not allowed on Mariko!");
+
+			goto out;
+		}
+	}
+
+	if (f_read(&fp, buf, size, NULL))
+	{
+		f_close(&fp);
+
+		goto out;
+	}
+
+	f_close(&fp);
+
+
+	sd_end();
+
+	if (size < 0x30000)
+	{
+		// Enable boot storage.
+		b_cfg.boot_cfg |= BOOT_CFG_AUTOBOOT_EN;
+		b_cfg.autoboot      = opt;
+		b_cfg.autoboot_list = 0;
+
+        memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
+
+		_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
+
+		hw_deinit(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
+	}
+	else
+	{
+		goto out;
+	}
+
+	//void (*update_ptr)()      = (void *)RCM_PAYLOAD_ADDR;
+	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+
+	// Launch our payload.
+    // Set updated flag to skip check on launch.
+    EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
+    // Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+    sdmmc_storage_init_wait_sd();
+
+    (*ext_payload_ptr)();
+
+
+out:
+	gfx_con.mute = false;
+	EPRINTF("Failed to launch payload!");
+}
+
+
+
+/*
 extern u32 _find_section_name(char *lbuf, u32 lblen, char schar);
 extern ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type);
 
@@ -192,9 +279,10 @@ void _cfg_launch(ini_sec_t *cfg_sec)
 	msleep(2000);
 	btn_wait();
 }
-
+*/
 void _cfw(bool emummc)
 {
+    /*
 	ini_sec_t *cfg_sec = NULL;
     char head[100]; strcpy(head, "Atmosphere CFW");
 	cfg_sec = _ini_create_section(NULL, NULL, head, INI_CHOICE);
@@ -205,14 +293,25 @@ void _cfw(bool emummc)
 	if(emummc) cfg_add(cfg_sec, "emummcforce=1");
 	h_cfg.emummc_force_disable = !emummc;
 	_cfg_launch(cfg_sec);
+    
+    */
+    if(!emummc)
+        _launch_option("/StarDust/payloads/hekate.bin",3);
+    else
+        _launch_option("/StarDust/payloads/hekate.bin",4);
+
+        
 }
 
 void _stock_launch()
 {
+    _launch_option("/StarDust/payloads/hekate.bin",2);
+    /*
 	ini_sec_t *cfg_sec = NULL;
 	cfg_sec = _ini_create_section(NULL, NULL, NULL, INI_CHOICE);
 	cfg_add(cfg_sec, "pkg3=atmosphere/package3");
 	cfg_add(cfg_sec, "stock=1");
 	h_cfg.emummc_force_disable = true;
 	_cfg_launch(cfg_sec);
+    */
 }
