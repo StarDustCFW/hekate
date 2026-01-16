@@ -18,7 +18,7 @@
 
 #define MINOR_VERSION 3
 #define MAJOR_VERSION 0
-#define REVI_VERSION LOAD_BUILD_VER
+extern int REVI_VERSION;
 
 char Sversion[5];
 bool haschange = false;

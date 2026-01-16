@@ -7,6 +7,8 @@
 #include "input/touch.h"
 #include "Land.h"
 u8 battery_icons_blz[] = {};
+int REVI_VERSION = 20;
+
 int llaunch_payload(char *path)
 {
     _launch_payload(path, false, true);
@@ -39,8 +41,8 @@ void takeoff(){
             f_unlink("StarDust/flags/TAKEOVER.flag");
 
         	u8 *buf = zalloc(0x200);
-			is_ipl_updated(buf, "payload.bin", true);
-			//is_ipl_updated(buf, "atmosphere/reboot_payload.bin", true);
+			is_ipl_updated(buf, 0, "payload.bin", true);
+			//is_ipl_updated(buf, 0, "atmosphere/reboot_payload.bin", true);
 			free(buf);
         }
 
@@ -61,6 +63,10 @@ void takeoff(){
 // Alternative main() function
 void ipl_main2()
 {
+	// Override DRAM ID if needed.
+	if (ipl_ver.rcfg.rsvd_flags & RSVD_FLAG_DRAM_8GB)
+		fuse_force_8gb_dramid();
+
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	hw_init();
 
@@ -75,11 +81,11 @@ void ipl_main2()
 	uart_wait_xfer(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
-	// Check if battery is enough.
-	_check_low_battery();
-
 	// Set bootloader's default configuration.
 	set_default_configuration();
+
+	// Check if battery is enough.
+	_check_low_battery();
 
 	// Prep RTC regs for read. Needed for T210B01 R2C.
 	max77620_rtc_prep_read();
@@ -88,7 +94,7 @@ void ipl_main2()
 	display_init();
 
 	// Overclock BPMP.
-	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
+	bpmp_clk_rate_set(h_cfg.t210b01 ? ipl_ver.rcfg.bclk_t210b01 : ipl_ver.rcfg.bclk_t210);
 
 	// Mount SD Card.
 	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
@@ -106,7 +112,7 @@ void ipl_main2()
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
-	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
+	if (minerva_init((minerva_str_t *)&nyx_str->minerva)) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
 	// Disable watchdog protection.

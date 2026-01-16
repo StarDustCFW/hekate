@@ -16,7 +16,7 @@
 #include "../gui/custom-gui.h"
 #include "power/max17050.h"
 #include "../tools/tools.h"
-#define REVI_VERSION LOAD_BUILD_VER
+extern int REVI_VERSION;
 extern void llaunch_payload(char *path);
 
 __attribute__((noreturn)) void wait_for_button_and_reboot(void) {
