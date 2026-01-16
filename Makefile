@@ -12,9 +12,9 @@ include ./Versions.inc
 
 ################################################################################
 
-TARGET := hekate
+TARGET := payload
+BUILD_VER := 20
 BUILDDIR := build
-BUILDTDIR := build/$(TARGET)
 OUTPUTDIR := output
 SOURCEDIR = bootloader
 BDKDIR := bdk
@@ -22,33 +22,49 @@ BDKINC := -I./$(BDKDIR)
 VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 VPATH += $(dir $(wildcard ./$(BDKDIR)/)) $(dir $(wildcard ./$(BDKDIR)/*/)) $(dir $(wildcard ./$(BDKDIR)/*/*/))
 
-# Track compiler flags
-TRACK_CFLAGS = $(BUILDTDIR)/.cflags
-TRACK_LDFLAGS = $(BUILDTDIR)/.ldflags
-
 # Main and graphics.
-OBJS =  start exception_handlers main heap gfx logos tui fe_info fe_tools
+OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	start.o exception_handlers.o \
+	main.o heap.o \
+	gfx.o logos.o tui.o \
+	l4t.o fe_info.o fe_tools.o \
+)
 
 # Hardware.
-OBJS += bpmp ccplex clock di i2c irq timer \
-		mc sdram minerva smmu \
-		gpio pinmux pmc se tsec uart \
-		fuse kfuse \
-		sdmmc sdmmc_driver emmc sd emummc \
-		bq24193 max17050 max7762x max77620-rtc \
-		hw_init
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	bpmp.o ccplex.o clock.o di.o i2c.o irq.o timer.o \
+	mc.o sdram.o minerva.o \
+	gpio.o pinmux.o pmc.o se.o smmu.o tsec.o uart.o \
+	fuse.o kfuse.o \
+	sdmmc.o sdmmc_driver.o emmc.o sd.o emummc.o \
+	bq24193.o max17050.o max7762x.o max77620-rtc.o \
+	hw_init.o \
+)
 
 # Utilities.
-OBJS += btn dirlist ianos ini util config
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	btn.o dirlist.o ianos.o util.o \
+	config.o ini.o \
+)
 
-# OS loaders.
-OBJS += l4t hos hos_config pkg1 pkg2 pkg3 pkg2_ini_kippatch secmon_exo
+# Horizon.
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	hos.o hos_config.o pkg1.o pkg2.o pkg3.o pkg2_ini_kippatch.o secmon_exo.o \
+)
 
 # Libraries.
-OBJS += lz lz4 blz diskio ff ffunicode ffsystem elfload elfreloc_arm
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	lz.o lz4.o blz.o \
+	diskio.o ff.o ffunicode.o ffsystem.o \
+	elfload.o elfreloc_arm.o \
+)
 
-OBJS := $(addsuffix .o, $(OBJS))
-OBJS := $(addprefix $(BUILDTDIR)/, $(OBJS))
+# Custom for Argon
+CFILES := $(foreach dir,bootloader/menu,$(notdir $(shell find $(dir) -name "*.c"))) sprintf.o touch.o
+DEL := main.o logos.o
+OBJS := $(filter-out $(addprefix $(BUILDDIR)/$(TARGET)/, $(DEL)), $(OBJS))
+OBJS := $(OBJS) $(addprefix $(BUILDDIR)/$(TARGET)/, $(CFILES:.c=.o))
+#$(error $(OBJS))
 
 GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'
 FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
@@ -58,6 +74,7 @@ FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_VER_RL=$(BLVERSION_REL)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_VER_RL=$(NYXVERSION_REL)
+CUSTOMDEFINES += -DLOAD_BUILD_VER=$(BUILD_VER)
 
 # BDK defines.
 CUSTOMDEFINES += -DBDK_MALLOC_NO_DEFRAG -DBDK_MC_ENABLE_AHB_REDIRECT -DBDK_EMUMMC_ENABLE
@@ -86,17 +103,9 @@ TOOLSLZ := $(wildcard tools/lz)
 TOOLSB2C := $(wildcard tools/bin2c)
 TOOLS := $(TOOLSLZ) $(TOOLSB2C)
 
-ifndef IPLECHO
-T := $(shell $(MAKE) $(BUILDTDIR)/$(TARGET).elf --no-print-directory -nrRf $(firstword $(MAKEFILE_LIST)) IPLECHO="IPLOBJ" | grep -c "IPLOBJ")
-
-N := x
-C = $(words $N)$(eval N := x $N)
-IPLECHO = echo -ne "\r`expr "  [\`expr $C '*' 100 / $T\`" : '.*\(....\)$$'`%]\033[K"
-endif
-
 ################################################################################
 
-.PHONY: all clean $(LDRDIR) $(TOOLS) $(NYXDIR) $(MODULEDIRS)
+.PHONY: all clean $(MODULEDIRS) $(NYXDIR) $(LDRDIR) $(TOOLS)
 
 all: $(TARGET).bin $(LDRDIR)
 	@printf ICTC49 >> $(OUTPUTDIR)/$(TARGET).bin
@@ -113,18 +122,17 @@ all: $(TARGET).bin $(LDRDIR)
 	@echo "--------------------------------------"
 
 clean: $(TOOLS)
+	@rm -rf $(OBJS)
 	@rm -rf $(BUILDDIR)
 	@rm -rf $(OUTPUTDIR)
-	@$(MAKE) --no-print-directory -C $(LDRDIR) $(MAKECMDGOALS) -$(MAKEFLAGS)
 
-$(MODULEDIRS): $(BUILDTDIR)/$(TARGET).elf
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+$(MODULEDIRS):
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
-$(NYXDIR): $(BUILDTDIR)/$(TARGET).elf $(MODULEDIRS)
-	@echo --------------------------------------
-	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+$(NYXDIR):
+#	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
-$(LDRDIR): $(TARGET).bin $(TOOLS) $(NYXDIR) $(MODULEDIRS)
+$(LDRDIR): $(TARGET).bin
 	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin
 	@mv $(OUTPUTDIR)/$(TARGET).bin $(OUTPUTDIR)/$(TARGET)_unc.bin
 	@mv $(OUTPUTDIR)/$(TARGET).bin.00.lz payload_00
@@ -138,31 +146,24 @@ $(LDRDIR): $(TARGET).bin $(TOOLS) $(NYXDIR) $(MODULEDIRS)
 $(TOOLS):
 	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
-$(TARGET).bin: $(BUILDTDIR)/$(TARGET).elf
+$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR) $(TOOLS)
 	@$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
-	@echo --------------------------------------
 
-$(BUILDTDIR)/$(TARGET).elf: $(OBJS) $(TRACK_LDFLAGS)
-	@echo -ne "\r[100%] Linking $(TARGET).elf\033[K"
-	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $(OBJS) -o $@
-	@printf "\n$(TARGET) was built with the following flags:\nCFLAGS:  $(CFLAGS)\nLDFLAGS: $(LDFLAGS)\n"
+$(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
+	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
+	@printf "$(TARGET) was built with the following flags:\nCFLAGS:  $(CFLAGS)\nLDFLAGS: $(LDFLAGS)\n"
 
-$(BUILDTDIR)/%.o: %.c $(TRACK_CFLAGS) | $(BUILDTDIR)
-	@$(IPLECHO) Building $@
-	@$(CC) $(CFLAGS) $(BDKINC) -MMD -MP -c $< -o $@
+$(BUILDDIR)/$(TARGET)/%.o: %.c
+	@echo Building $@
+	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
-$(BUILDTDIR)/%.o: %.S $(TRACK_CFLAGS) | $(BUILDTDIR)
-	@$(IPLECHO) Building $@
-	@$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+$(BUILDDIR)/$(TARGET)/%.o: %.S
+	@echo Building $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILDTDIR):
+$(OBJS): $(BUILDDIR)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET):
 	@mkdir -p "$(BUILDDIR)"
-	@mkdir -p "$(BUILDTDIR)"
+	@mkdir -p "$(BUILDDIR)/$(TARGET)"
 	@mkdir -p "$(OUTPUTDIR)"
-
-# Non objects change detectors.
-$(TRACK_CFLAGS): $(BUILDTDIR)
-	@echo '$(CFLAGS)' | cmp -s - $@ || echo '$(CFLAGS)' > $@
-$(TRACK_LDFLAGS): $(BUILDTDIR)
-	@echo '$(LDFLAGS)' | cmp -s - $@ || echo '$(LDFLAGS)' > $@
--include $(OBJS:.o=.d)
