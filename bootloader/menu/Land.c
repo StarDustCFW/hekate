@@ -108,7 +108,7 @@ void ipl_main2()
 
 	// Save sdram lp0 config.
 	void *sdram_params = h_cfg.t210b01 ? sdram_get_params_t210b01() : sdram_get_params_patched();
-	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
+	if (!ianos_loader("StarDust/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.

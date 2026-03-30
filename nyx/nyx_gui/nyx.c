@@ -129,7 +129,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 
 	char path[128];
 
-	strcpy(path,"bootloader/payloads/");
+	strcpy(path,"StarDust/payloads/");
 	strcat(path, filename);
 
 	if (!sd_mount())
@@ -204,7 +204,7 @@ static void _load_saved_configuration()
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_nyx_sections);
 
-	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	if (!ini_parse(&ini_sections, "StarDust/hekate_ipl.ini", false))
 	{
 		create_config_entry();
 		goto skip_main_cfg_parse;
@@ -249,7 +249,7 @@ static void _load_saved_configuration()
 	ini_free(&ini_sections);
 
 skip_main_cfg_parse:
-	if (!ini_parse(&ini_nyx_sections, "bootloader/nyx.ini", false))
+	if (!ini_parse(&ini_nyx_sections, "StarDust/nyx.ini", false))
 		return;
 
 	// Load Nyx configuration.
@@ -313,7 +313,7 @@ static int nyx_load_resources()
 	FIL fp;
 	int res;
 
-	res = f_open(&fp, "bootloader/sys/res.pak", FA_READ);
+	res = f_open(&fp, "StarDust/sys/res.pak", FA_READ);
 	if (res)
 		return res;
 
@@ -326,19 +326,19 @@ static int nyx_load_resources()
 static void nyx_load_bg_icons()
 {
 	// If no custom switch icon exists, load normal.
-	if (!f_stat("bootloader/res/icon_switch_custom.bmp", NULL))
-		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch_custom.bmp");
+	if (!f_stat("StarDust/res/icon_switch_custom.bmp", NULL))
+		icon_switch = bmp_to_lvimg_obj("StarDust/res/icon_switch_custom.bmp");
 	else
-		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch.bmp");
+		icon_switch = bmp_to_lvimg_obj("StarDust/res/icon_switch.bmp");
 
 	// If no custom payload icon exists, load normal.
-	if (!f_stat("bootloader/res/icon_payload_custom.bmp", NULL))
-		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload_custom.bmp");
+	if (!f_stat("StarDust/res/icon_payload_custom.bmp", NULL))
+		icon_payload = bmp_to_lvimg_obj("StarDust/res/icon_payload_custom.bmp");
 	else
-		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload.bmp");
+		icon_payload = bmp_to_lvimg_obj("StarDust/res/icon_payload.bmp");
 
 	// Load background resource if any.
-	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
+	hekate_bg = bmp_to_lvimg_obj("StarDust/res/background.bmp");
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC

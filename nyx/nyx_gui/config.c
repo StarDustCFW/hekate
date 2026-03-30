@@ -69,17 +69,17 @@ int create_config_entry()
 
 	LIST_INIT(ini_sections);
 
-	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	if (ini_parse(&ini_sections, "StarDust/hekate_ipl.ini", false))
 		mainIniFound = true;
 	else
 	{
-		u8 res = f_open(&fp, "bootloader/hekate_ipl.ini", FA_READ);
+		u8 res = f_open(&fp, "StarDust/hekate_ipl.ini", FA_READ);
 		if (res == FR_NO_FILE || res == FR_NO_PATH)
 		{
 			f_mkdir("bootloader");
-			f_mkdir("bootloader/ini");
-			f_mkdir("bootloader/payloads");
-			f_mkdir("bootloader/sys");
+			f_mkdir("StarDust/ini");
+			f_mkdir("StarDust/payloads");
+			f_mkdir("StarDust/sys");
 		}
 		else
 		{
@@ -89,7 +89,7 @@ int create_config_entry()
 		}
 	}
 
-	if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+	if (f_open(&fp, "StarDust/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 		return 1;
 
 	// Add config entry.
@@ -197,7 +197,7 @@ int create_nyx_config_entry(bool force_unmount)
 	// Make sure that bootloader folder exists.
 	f_mkdir("bootloader");
 
-	if (f_open(&fp, "bootloader/nyx.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+	if (f_open(&fp, "StarDust/nyx.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 		return 1;
 
 	// Add config entry.

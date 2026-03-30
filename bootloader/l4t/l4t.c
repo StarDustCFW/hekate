@@ -981,7 +981,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	}
 
 	// Set firmware path.
-	strcpy(sd_path, "bootloader/sys/l4t/");
+	strcpy(sd_path, "StarDust/sys/l4t/");
 	sd_path_len = strlen(sd_path);
 
 	if (!t210b01)

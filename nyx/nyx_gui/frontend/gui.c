@@ -184,7 +184,7 @@ static void _save_log_to_bmp(char *fname)
 	bmp->rsvd2    = 0;
 
 	char path[0x80];
-	strcpy(path, "bootloader/screenshots");
+	strcpy(path, "StarDust/screenshots");
 	s_printf(path + strlen(path), "/nyx%s_log.bmp", fname);
 	sd_save_to_file(bitmap, file_size, path);
 
@@ -935,7 +935,7 @@ void reload_nyx(lv_obj_t *obj, bool force)
 		sd_mount();
 
 		// Check that Nyx still exists.
-		if (f_stat("bootloader/sys/nyx.bin", NULL))
+		if (f_stat("StarDust/sys/nyx.bin", NULL))
 		{
 			sd_unmount();
 
@@ -1097,7 +1097,7 @@ static lv_res_t _create_mbox_reload(lv_obj_t *btn)
 	lv_obj_set_width(mbox, LV_HOR_RES * 4 / 10);
 
 	lv_mbox_set_text(mbox, "#FF8000 Do you really want#\n#FF8000 to reload hekate & Nyx?#\n\n"
-		"This also checks\n#96FF00 bootloader/update.bin#\nfor hekate updates");
+		"This also checks\n#96FF00 StarDust/update.bin#\nfor hekate updates");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, reload_action);
 
@@ -1415,7 +1415,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 		goto out_end;
 	}
 
-	dirlist_t *filelist = dirlist("bootloader/payloads", NULL, 0);
+	dirlist_t *filelist = dirlist("StarDust/payloads", NULL, 0);
 	sd_unmount();
 
 	u32 i = 0;
@@ -1724,21 +1724,21 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		goto failed_sd_mount;
 
 	// Check if we use custom system icons.
-	bool icon_sw_custom = !f_stat("bootloader/res/icon_switch_custom.bmp", NULL);
-	bool icon_pl_custom = !f_stat("bootloader/res/icon_payload_custom.bmp", NULL);
+	bool icon_sw_custom = !f_stat("StarDust/res/icon_switch_custom.bmp", NULL);
+	bool icon_pl_custom = !f_stat("StarDust/res/icon_payload_custom.bmp", NULL);
 
 	// Choose what to parse.
 	bool ini_parse_success = false;
 	if (!more_cfg)
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
+		ini_parse_success = ini_parse(&ini_sections, "StarDust/hekate_ipl.ini", false);
 	else
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+		ini_parse_success = ini_parse(&ini_sections, "StarDust/ini", true);
 
 	if (combined_cfg && !ini_parse_success)
 	{
 ini_parsing:
 		list_init(&ini_sections);
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+		ini_parse_success = ini_parse(&ini_sections, "StarDust/ini", true);
 		more_cfg = true;
 	}
 
@@ -1772,11 +1772,11 @@ ini_parsing:
 		// If not, use defaults.
 		if (!icon_path)
 		{
-			s_printf(tmp_path, "bootloader/res/%s.bmp", ini_sec->name);
+			s_printf(tmp_path, "StarDust/res/%s.bmp", ini_sec->name);
 			bmp = bmp_to_lvimg_obj(tmp_path);
 			if (!bmp)
 			{
-				s_printf(tmp_path, "bootloader/res/%s_hue_nobox.bmp", ini_sec->name);
+				s_printf(tmp_path, "StarDust/res/%s_hue_nobox.bmp", ini_sec->name);
 				bmp = bmp_to_lvimg_obj(tmp_path);
 				if (bmp)
 				{
@@ -1785,14 +1785,14 @@ ini_parsing:
 				}
 				if (!bmp)
 				{
-					s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
+					s_printf(tmp_path, "StarDust/res/%s_hue.bmp", ini_sec->name);
 					bmp = bmp_to_lvimg_obj(tmp_path);
 					if (bmp)
 						img_colorize = true;
 				}
 				if (!bmp)
 				{
-					s_printf(tmp_path, "bootloader/res/%s_nobox.bmp", ini_sec->name);
+					s_printf(tmp_path, "StarDust/res/%s_nobox.bmp", ini_sec->name);
 					bmp = bmp_to_lvimg_obj(tmp_path);
 					if (bmp)
 						img_noborder = true;
@@ -1929,14 +1929,14 @@ failed_sd_mount:
 		{
 			lv_label_set_static_text(label_error,
 				"#FFDD00 No main boot entries found...#\n"
-				"Check that #96FF00 bootloader/hekate_ipl.ini# has boot entries\n"
+				"Check that #96FF00 StarDust/hekate_ipl.ini# has boot entries\n"
 				"or use #C7EA46 More configs# button for more boot entries.");
 		}
 		else
 		{
 			lv_label_set_static_text(label_error,
 				"#FFDD00 No .ini or boot entries found...#\n"
-				"Check that a .ini file exists in #96FF00 bootloader/ini/#\n"
+				"Check that a .ini file exists in #96FF00 StarDust/ini/#\n"
 				"and that it contains at least one entry.");
 		}
 

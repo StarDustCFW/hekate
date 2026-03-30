@@ -2844,7 +2844,7 @@ static bool _lockpick_exists_check()
 	if (sd_mount())
 	{
 		FIL fp;
-		if (f_open(&fp, "bootloader/payloads/Lockpick_RCM.bin", FA_READ))
+		if (f_open(&fp, "StarDust/payloads/Lockpick_RCM.bin", FA_READ))
 			goto out;
 
 		// Read Lockpick payload and check versioning.
@@ -2940,7 +2940,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	{
 		lv_label_set_static_text(label_txt2,
 			"View Ipatches and dump the unpatched and patched versions\nof BootROM. Or dump every single key via #C7EA46 Lockpick RCM#.\n"
-			"#FFDD00 bootloader/payloads/Lockpick_RCM.bin is missing or old!#\n");
+			"#FFDD00 StarDust/payloads/Lockpick_RCM.bin is missing or old!#\n");
 	}
 
 	lv_obj_set_style(label_txt2, &hint_small_style);

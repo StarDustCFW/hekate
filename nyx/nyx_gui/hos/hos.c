@@ -381,7 +381,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		 */
 
 		// Use custom TSEC Hovi Keygen firmware.
-		tsec_ctxt->fw = sd_file_read("bootloader/sys/thk.bin", NULL);
+		tsec_ctxt->fw = sd_file_read("StarDust/sys/thk.bin", NULL);
 		if (!tsec_ctxt->fw)
 		{
 			EPRINTF("\nFailed to load thk.bin");

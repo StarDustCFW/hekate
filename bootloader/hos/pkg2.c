@@ -64,7 +64,7 @@ static void parse_external_kip_patches()
 		return;
 
 	LIST_INIT(ini_kip_sections);
-	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
+	if (ini_patch_parse(&ini_kip_sections, "StarDust/patches.ini"))
 	{
 		// Copy ids into a new patchset.
 		_kip_id_sets = zalloc(sizeof(kip1_id_t) * 256); // Max 256 kip ids.
@@ -658,7 +658,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 				// Inject emuMMC code.
 				gfx_printf("Injecting emuMMC. FS ID: %d\n", emu_cfg.fs_ver);
-				if (_kipm_inject("bootloader/sys/emummc.kipm", "FS", ki))
+				if (_kipm_inject("StarDust/sys/emummc.kipm", "FS", ki))
 					return "emummc";
 
 				// Skip checking again.

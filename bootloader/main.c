@@ -270,7 +270,7 @@ static void _launch_payloads()
 	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 
 	dir = (char *)malloc(256);
-	memcpy(dir, "bootloader/payloads", 20);
+	memcpy(dir, "StarDust/payloads", 20);
 
 	filelist = dirlist(dir, NULL, 0);
 
@@ -350,9 +350,9 @@ static void _launch_ini_list()
 		goto parse_failed;
 
 	// Check that ini files exist and parse them.
-	if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
+	if (!ini_parse(&ini_list_sections, "StarDust/ini", true))
 	{
-		EPRINTF("No .ini files in bootloader/ini!");
+		EPRINTF("No .ini files in StarDust/ini!");
 		goto parse_failed;
 	}
 
@@ -483,7 +483,7 @@ static void _launch_config()
 	emummc_load_cfg();
 
 	// Parse main configuration.
-	ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
+	ini_parse(&ini_sections, "StarDust/hekate_ipl.ini", false);
 
 	// Build configuration menu.
 	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
@@ -615,7 +615,7 @@ out:
 
 static void _nyx_load_run()
 {
-	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
+	u8 *nyx = sd_file_read("StarDust/sys/nyx.bin", NULL);
 	if (!nyx)
 		return;
 
@@ -744,12 +744,12 @@ static void _check_for_updated_bootloader()
 	else
 	{
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
-		if (!f_stat("bootloader/update.bin", NULL))
-			_launch_payload("bootloader/update.bin", true, false);
+		if (!f_stat("StarDust/update.bin", NULL))
+			_launch_payload("StarDust/update.bin", true, false);
 		else
 		{
 			u8 *buf = zalloc(0x200);
-			is_ipl_updated(buf, 0, "bootloader/update.bin", true);
+			is_ipl_updated(buf, 0, "StarDust/update.bin", true);
 			free(buf);
 		}
 	}
@@ -788,7 +788,7 @@ static void _auto_launch()
 	emummc_load_cfg();
 
 	// Parse hekate main configuration.
-	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	if (!ini_parse(&ini_sections, "StarDust/hekate_ipl.ini", false))
 		goto out; // Can't load hekate_ipl.ini.
 
 	// Load configuration.
@@ -875,7 +875,7 @@ static void _auto_launch()
 		boot_entry_id = 1;
 		bootlogoCustomEntry = NULL;
 
-		if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
+		if (!ini_parse(&ini_list_sections, "StarDust/ini", true))
 			goto skip_list;
 
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
@@ -932,7 +932,7 @@ skip_list:
 
 		// Custom entry bootlogo not found, trying default custom one.
 		if (!bitmap)
-			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp", &fsize);
+			bitmap = (u8 *)sd_file_read("StarDust/bootlogo.bmp", &fsize);
 
 		if (bitmap)
 		{
@@ -1513,7 +1513,7 @@ void ipl_main()
 
 	// Save sdram lp0 config.
 	void *sdram_params = h_cfg.t210b01 ? sdram_get_params_t210b01() : sdram_get_params_patched();
-	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
+	if (!ianos_loader("StarDust/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
