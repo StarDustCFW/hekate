@@ -1254,7 +1254,7 @@ int launcher(char *path){
 		u32 bootF = sd_file_size("StarDust/boot_forwarder.dat");
 		u32 bootR = sd_file_size("boot.dat");
 		if (sd_file_exists ("StarDust/autobootecho.txt")||(btn_read() & BTN_VOL_UP))
-		sd_save_2_file("fusee", 10, "StarDust/autobootecho.txt");
+			sd_save_2_file("fusee", 10, "StarDust/autobootecho.txt");
 	
         if (bootF < bootR){
             copyfile("StarDust/boot_forwarder.dat","boot.dat");
@@ -1267,9 +1267,15 @@ int launcher(char *path){
 			copyfile("payload.bin","atmosphere/reboot_payload.bin");
 		}
 		
-		syspatch = sd_file_exists("/atmosphere/contents/420000000000000B/flags/boot2.flag");
-		if(!syspatch)
+		// syspatch = sd_file_exists("/atmosphere/contents/420000000000000B/flags/boot2.flag");
+		// if(!syspatch)
+		if (sd_file_exists("StarDust/flags/ImHekate.flag"))
+		{
 			_cfw(emu_cfg.enabled);
+		}
+	
+		
+		
     }
 /*
 	//SxOS
