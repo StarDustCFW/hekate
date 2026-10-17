@@ -185,6 +185,7 @@ void _launch_option(char *path, u8 opt)
 		b_cfg.boot_cfg |= BOOT_CFG_AUTOBOOT_EN;
 		b_cfg.autoboot      = opt;
 		b_cfg.autoboot_list = 0;
+        h_cfg.updater2p = 0;
 
         memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
 
