@@ -7,7 +7,7 @@
 #include "input/touch.h"
 #include "Land.h"
 u8 battery_icons_blz[] = {};
-int REVI_VERSION = 20;
+int REVI_VERSION = 23;
 
 int llaunch_payload(char *path)
 {
